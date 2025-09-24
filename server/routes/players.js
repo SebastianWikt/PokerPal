@@ -177,10 +177,13 @@ router.put('/:computingId',
             }
             
             // Update the player
-            await DatabaseUtils.updatePlayer(computingId, updates);
+            console.debug('Updating player:', computingId, 'with updates:', updates);
+            const updateResult = await DatabaseUtils.updatePlayer(computingId, updates);
+            console.debug('Update result:', updateResult);
             
             // Retrieve updated player data
             const updatedPlayer = await DatabaseUtils.getPlayer(computingId);
+            console.debug('Updated player from DB:', updatedPlayer);
             
             // Create audit log if admin is updating another user's profile
             if (req.user.is_admin && req.user.computing_id !== computingId) {

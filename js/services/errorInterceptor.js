@@ -29,6 +29,14 @@ angular.module('pokerPalApp')
                     errorMessage = 'Access denied: ' + errorMessage;
                     break;
                 case 404:
+                    // Some endpoints (like GET /api/sessions/active/:id/:date) intentionally
+                    // return 404 when no active resource exists. Suppress the global error
+                    // for those expected 404s to avoid alarming the user — let the local
+                    // controller handle the absence.
+                    if (response.config && response.config.url && response.config.url.indexOf('/sessions/active') !== -1) {
+                        // Do not add a global error for this specific expected case
+                        return $q.reject(response);
+                    }
                     errorMessage = 'Resource not found';
                     break;
                 case 409:

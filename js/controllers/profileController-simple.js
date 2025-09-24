@@ -63,12 +63,59 @@ angular.module('pokerPalApp')
                     level: currentUser.level,
                     major: currentUser.major
                 };
+                // store original snapshot for change detection
+                $scope.originalData = angular.copy($scope.playerData);
             }
         } else {
             $location.path('/');
             return;
         }
     }
+
+    // Clear messages helper
+    $scope.clearMessages = function() {
+        $scope.error = null;
+        $scope.success = null;
+        $scope.validationErrors = [];
+    };
+
+    // Suggest experience level based on years (safe call)
+    $scope.updateSuggestedLevel = function() {
+        try {
+            if ($scope.playerData.years_of_experience && !$scope.playerData.level && PlayerService && PlayerService.suggestExperienceLevel) {
+                $scope.playerData.level = PlayerService.suggestExperienceLevel($scope.playerData.years_of_experience);
+            }
+        } catch (err) {
+            // ignore
+        }
+    };
+
+    // Handle Enter key to submit if form valid and has changes
+    $scope.handleKeyPress = function(event) {
+        if (event && event.keyCode === 13 && !$scope.saving && $scope.profileForm.$valid && $scope.hasChanges()) {
+            $scope.saveProfile();
+        }
+    };
+
+    // Check if form has changes (edit mode)
+    $scope.hasChanges = function() {
+        if ($scope.isCreateMode) return true;
+        if (!$scope.originalData) return false;
+
+        function normalize(v) {
+            if (v === null || v === undefined) return '';
+            if (typeof v === 'number') return String(v);
+            return String(v).trim();
+        }
+
+        return (
+            normalize($scope.playerData.first_name) !== normalize($scope.originalData.first_name) ||
+            normalize($scope.playerData.last_name) !== normalize($scope.originalData.last_name) ||
+            normalize($scope.playerData.years_of_experience) !== normalize($scope.originalData.years_of_experience) ||
+            normalize($scope.playerData.level) !== normalize($scope.originalData.level) ||
+            normalize($scope.playerData.major) !== normalize($scope.originalData.major)
+        );
+    };
     
     // Save profile function
     $scope.saveProfile = function() {
@@ -102,6 +149,8 @@ angular.module('pokerPalApp')
                 // Update AuthService with new user data if available
                 if (response.user) {
                     AuthService.updateCurrentUser(response.user);
+                    // update snapshot so hasChanges returns false
+                    $scope.originalData = angular.copy($scope.playerData);
                 }
             }
         }).catch(function(error) {

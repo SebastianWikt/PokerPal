@@ -46,6 +46,8 @@ angular.module('pokerPalApp')
                 level: currentUser.level,
                 major: currentUser.major
             };
+            // Keep an original copy to detect changes reliably
+            $scope.originalData = angular.copy($scope.playerData);
         } else {
             $location.path('/');
         }
@@ -122,6 +124,8 @@ angular.module('pokerPalApp')
                         level: updatedUser.level,
                         major: updatedUser.major
                     };
+                    // Update original snapshot so hasChanges is reset
+                    $scope.originalData = angular.copy($scope.playerData);
                 });
             }
             
@@ -189,16 +193,33 @@ angular.module('pokerPalApp')
     // Check if form has changes (for edit mode)
     $scope.hasChanges = function() {
         if ($scope.isCreateMode) return true;
-        
-        var currentUser = AuthService.getCurrentUser();
-        if (!currentUser) return false;
-        
+        // If we have an originalData snapshot, compare against that for stability
+        if (!$scope.originalData) {
+            var currentUser = AuthService.getCurrentUser();
+            if (!currentUser) return false;
+            $scope.originalData = {
+                computing_id: currentUser.computing_id,
+                first_name: currentUser.first_name,
+                last_name: currentUser.last_name,
+                years_of_experience: currentUser.years_of_experience,
+                level: currentUser.level,
+                major: currentUser.major
+            };
+        }
+
+        function normalize(v) {
+            if (v === null || v === undefined) return '';
+            // normalize numbers to string for comparison
+            if (typeof v === 'number') return String(v);
+            return String(v).trim();
+        }
+
         return (
-            $scope.playerData.first_name !== currentUser.first_name ||
-            $scope.playerData.last_name !== currentUser.last_name ||
-            $scope.playerData.years_of_experience !== currentUser.years_of_experience ||
-            $scope.playerData.level !== currentUser.level ||
-            $scope.playerData.major !== currentUser.major
+            normalize($scope.playerData.first_name) !== normalize($scope.originalData.first_name) ||
+            normalize($scope.playerData.last_name) !== normalize($scope.originalData.last_name) ||
+            normalize($scope.playerData.years_of_experience) !== normalize($scope.originalData.years_of_experience) ||
+            normalize($scope.playerData.level) !== normalize($scope.originalData.level) ||
+            normalize($scope.playerData.major) !== normalize($scope.originalData.major)
         );
     };
     

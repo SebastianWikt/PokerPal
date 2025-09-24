@@ -11,7 +11,8 @@ function validateBody(schema) {
     return (req, res, next) => {
         const { error, value } = schema.validate(req.body, {
             abortEarly: false,
-            stripUnknown: true
+            stripUnknown: true,
+            convert: true // allow Joi to coerce types when possible
         });
         
         if (error) {
@@ -19,7 +20,8 @@ function validateBody(schema) {
                 field: detail.path.join('.'),
                 message: detail.message
             }));
-            
+            // Log the full Joi error for debugging
+            console.error('Validation error details:', error);
             return res.status(400).json({
                 error: 'Validation failed',
                 message: 'Invalid request data',

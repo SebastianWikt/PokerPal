@@ -1,8 +1,11 @@
 angular.module('pokerPalApp')
-.controller('SessionController', ['$scope', '$location', 'AuthService', 'SessionService', 'ComputerVisionService', function($scope, $location, AuthService, SessionService, ComputerVisionService) {
+.controller('SessionController', ['$scope', '$location', '$timeout', 'AuthService', 'SessionService', 'ComputerVisionService', function($scope, $location, $timeout, AuthService, SessionService, ComputerVisionService) {
     
     // Initialize controller
     $scope.currentUser = AuthService.getCurrentUser();
+    // Prevent async checks from stomping recent manual session type changes
+    var manualOverrideUntil = 0; // timestamp (ms) until which manual choice is respected
+    var __debug = true; // set to true to enable extra console logging for debugging
     $scope.loading = false;
     $scope.saving = false;
     $scope.error = null;
@@ -13,7 +16,34 @@ angular.module('pokerPalApp')
     $scope.activeSession = null;
     $scope.hasActiveSession = false;
     
-    // Form data
+        
+        // DOM listeners will be attached after the view has rendered
+    // Helper: parse YYYY-MM-DD into Date object
+    function parseYMDToDate(ymd) {
+        if (!ymd) return null;
+        if (ymd instanceof Date) return ymd;
+        var parts = ('' + ymd).split('-');
+        if (parts.length !== 3) return new Date(ymd);
+        var y = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10) - 1;
+        var d = parseInt(parts[2], 10);
+        return new Date(y, m, d);
+    }
+
+    // Helper: format Date or string to YYYY-MM-DD
+    function formatDateToYMD(date) {
+        if (!date) return '';
+        if (typeof date === 'string') {
+            // assume already YYYY-MM-DD
+            return date;
+        }
+        var y = date.getFullYear();
+        var m = String(date.getMonth() + 1).padStart(2, '0');
+        var d = String(date.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + d;
+    }
+    // (no automatic sessionType flips here)
+    // Form data (use YYYY-MM-DD string for compatibility with <input type="date">)
     $scope.sessionData = {
         session_date: SessionService.getTodayDate(),
         start_chips: null,
@@ -21,11 +51,57 @@ angular.module('pokerPalApp')
         end_chips: null,
         end_chip_breakdown: {}
     };
-    
+
+    // Drag state for photo upload
+    $scope.isDragOver = false;
     // Photo handling
     $scope.photoFile = null;
     $scope.photoPreview = null;
     $scope.photoError = null;
+        // Attach DOM listeners for photo area and hidden file input so events call controller methods reliably
+        function attachDomListeners() {
+            try {
+                var photoArea = document.querySelector('.photo-upload-area');
+                var fileInput = document.getElementById('photoInput');
+
+                if (__debug) console.debug('[session] attachDomListeners: found photoArea=', !!photoArea, 'fileInput=', !!fileInput);
+                if (photoArea) {
+                    photoArea.addEventListener('click', function(e) {
+                        // Use scope method
+                        if (__debug) console.debug('[session] photoArea click');
+                        $scope.triggerFileInput();
+                        // no $apply needed here since click originates from DOM
+                    });
+
+                    photoArea.addEventListener('dragover', function(e) {
+                        e.preventDefault();
+                        if (__debug) console.debug('[session] photoArea dragover');
+                        $scope.onDragOver(e);
+                    });
+
+                    photoArea.addEventListener('dragleave', function(e) {
+                        e.preventDefault();
+                        $scope.onDragLeave(e);
+                    });
+
+                    photoArea.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        if (__debug) console.debug('[session] photoArea drop');
+                        $scope.onDrop(e);
+                    });
+                }
+
+                if (fileInput) {
+                    fileInput.addEventListener('change', function(e) {
+                        if (__debug) console.debug('[session] fileInput change, files=', e.target.files && e.target.files.length);
+                        $scope.handleFileSelect(e);
+                    });
+                }
+            } catch (err) {
+                // ignore DOM attach errors
+                console.error('Failed to attach DOM listeners for photo upload', err);
+            }
+        }
     
     // Computer vision
     $scope.cvAnalyzing = false;
@@ -51,29 +127,53 @@ angular.module('pokerPalApp')
         
         // Check for active session for today
         checkActiveSession();
+        // Attach DOM listeners after view render (retry a couple times if view not ready)
+        (function tryAttach(attempts) {
+            $timeout(function() {
+                attachDomListeners();
+                // If elements not found, attachDomListeners will silently fail; retry once
+                if (attempts > 0) tryAttach(attempts - 1);
+            }, 50);
+        })(3);
     }
     
     // Check for active session
     function checkActiveSession() {
         $scope.loading = true;
-        
-        SessionService.getActiveSession($scope.currentUser.computing_id, $scope.sessionData.session_date)
+
+        var dateToCheck = $scope.sessionData.session_date || SessionService.getTodayDate();
+        SessionService.getActiveSession($scope.currentUser.computing_id, dateToCheck)
             .then(function(session) {
-                $scope.activeSession = session;
-                $scope.hasActiveSession = true;
-                $scope.sessionType = 'check-out';
-                
-                // Pre-fill data from active session
-                $scope.sessionData.start_chips = session.start_chips;
-                $scope.sessionData.start_chip_breakdown = session.start_chip_breakdown || {};
-                
+                if (session) {
+                    $scope.activeSession = session;
+                    $scope.hasActiveSession = true;
+                    // Only change the visible session type if the user hasn't manually overridden recently
+                    if (Date.now() >= manualOverrideUntil) {
+                        $scope.sessionType = 'check-out';
+                    }
+
+                    // Pre-fill data from active session
+                    $scope.sessionData.start_chips = session.start_chips;
+                    $scope.sessionData.start_chip_breakdown = session.start_chip_breakdown || {};
+                } else {
+                    // No active session - reset related state
+                    $scope.activeSession = null;
+                    $scope.hasActiveSession = false;
+                    if (Date.now() >= manualOverrideUntil) {
+                        $scope.sessionType = 'check-in';
+                    }
+                }
+
                 $scope.loading = false;
             })
             .catch(function(error) {
-                // No active session found - this is normal
+                // Unexpected error while checking; mark not loading and surface a message
+                console.error('Error while checking active session:', error);
                 $scope.activeSession = null;
                 $scope.hasActiveSession = false;
-                $scope.sessionType = 'check-in';
+                if (Date.now() >= manualOverrideUntil) {
+                    $scope.sessionType = 'check-in';
+                }
                 $scope.loading = false;
             });
     }
@@ -89,6 +189,10 @@ angular.module('pokerPalApp')
         if ($scope.sessionType !== type) {
             $scope.sessionType = type;
             $scope.clearMessages();
+            // prevent background checks from overriding this manual change for a short window
+            // give the user a longer window (5s) to avoid immediate UI flicker
+            manualOverrideUntil = Date.now() + 5000;
+            if (__debug) console.debug('[session] manual switch to', type, 'manualOverrideUntil=', manualOverrideUntil);
             
             if (type === 'check-in') {
                 // Reset form for check-in only if switching from check-out
@@ -107,7 +211,55 @@ angular.module('pokerPalApp')
     // Handle file selection from input
     $scope.handleFileSelect = function(event) {
         var files = event.target.files;
-        $scope.onPhotoSelected(files);
+        // Use $applyAsync to schedule digest safely when called from native DOM handlers
+        $scope.$applyAsync(function() {
+            if (__debug) console.debug('[session] handleFileSelect files=', files && files.length);
+            $scope.onPhotoSelected(files);
+        });
+    };
+
+    // Trigger hidden file input
+    $scope.triggerFileInput = function() {
+        var fileInput = document.getElementById('photoInput');
+        if (fileInput) {
+            try {
+                if (__debug) console.debug('[session] triggerFileInput -> clicking file input');
+                fileInput.click();
+            } catch (e) {
+                // fallback: focus and send keyboard event (very rare)
+                if (__debug) console.debug('[session] triggerFileInput fallback focus');
+                fileInput.focus();
+            }
+        }
+    };
+
+    // Drag & drop handlers
+    $scope.onDragOver = function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        $scope.isDragOver = true;
+        $scope.$applyAsync();
+    };
+
+    $scope.onDragLeave = function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        $scope.isDragOver = false;
+        $scope.$applyAsync();
+    };
+
+    $scope.onDrop = function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        $scope.isDragOver = false;
+        var dt = event.dataTransfer || event.originalEvent && event.originalEvent.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+            $scope.$applyAsync(function() {
+                if (__debug) console.debug('[session] onDrop files=', dt.files.length);
+                $scope.onPhotoSelected(dt.files);
+            });
+        }
+        $scope.$applyAsync();
     };
     
     // Handle photo selection
@@ -119,6 +271,7 @@ angular.module('pokerPalApp')
         
         var file = files[0];
         $scope.photoError = null;
+        if (__debug) console.debug('[session] onPhotoSelected file=', file && file.name, 'size=', file && file.size);
         
         // Validate photo
         var photoErrors = SessionService.validatePhotoFile(file);
@@ -189,7 +342,7 @@ angular.module('pokerPalApp')
         
         // Prepare session data
         var sessionData = {
-            session_date: $scope.sessionData.session_date,
+            session_date: formatDateToYMD($scope.sessionData.session_date),
             session_type: $scope.sessionType
         };
         
@@ -256,7 +409,7 @@ angular.module('pokerPalApp')
     // Reset form
     $scope.resetForm = function() {
         $scope.sessionData = {
-            session_date: SessionService.getTodayDate(),
+            session_date: parseYMDToDate(SessionService.getTodayDate()),
             start_chips: null,
             start_chip_breakdown: {},
             end_chips: null,

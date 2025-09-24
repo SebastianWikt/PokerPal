@@ -43,6 +43,39 @@ const upload = multer({
     }
 });
 
+// Middleware to parse JSON string fields from multipart/form-data
+function parseMultipartJsonFields(req, res, next) {
+    try {
+        if (req.body) {
+            ['start_chip_breakdown', 'end_chip_breakdown'].forEach(field => {
+                if (req.body[field] && typeof req.body[field] === 'string') {
+                    try {
+                        req.body[field] = JSON.parse(req.body[field]);
+                    } catch (e) {
+                        // leave as-is; validation will catch invalid format
+                    }
+                }
+            });
+            // Coerce numeric fields that arrive as strings in multipart/form-data
+            if (req.body.start_chips && typeof req.body.start_chips === 'string') {
+                var n = parseFloat(req.body.start_chips);
+                if (!isNaN(n)) req.body.start_chips = n;
+            }
+            if (req.body.end_chips && typeof req.body.end_chips === 'string') {
+                var m = parseFloat(req.body.end_chips);
+                if (!isNaN(m)) req.body.end_chips = m;
+            }
+            // Ensure session_date is a trimmed string
+            if (req.body.session_date && typeof req.body.session_date === 'string') {
+                req.body.session_date = req.body.session_date.trim();
+            }
+        }
+    } catch (e) {
+        // don't block request on parsing errors here
+    }
+    next();
+}
+
 // Validation schemas
 const createSessionSchema = Joi.object({
     session_date: schemas.sessionDate.required(),
@@ -71,9 +104,10 @@ const sessionIdSchema = Joi.object({
  * POST /api/sessions
  * Create a new session (check-in) or complete existing session (check-out)
  */
-router.post('/', 
+router.post('/',
     authenticateToken,
     upload.single('photo'),
+    parseMultipartJsonFields,
     validateBody(createSessionSchema),
     async (req, res) => {
         try {
@@ -145,8 +179,18 @@ router.post('/',
                 
                 // Parse request data for check-out
                 const end_chips = parseFloat(req.body.end_chips);
-                const end_chip_breakdown = req.body.end_chip_breakdown ? 
-                    JSON.parse(req.body.end_chip_breakdown) : {};
+                let end_chip_breakdown = {};
+                if (req.body.end_chip_breakdown) {
+                    if (typeof req.body.end_chip_breakdown === 'string') {
+                        try {
+                            end_chip_breakdown = JSON.parse(req.body.end_chip_breakdown);
+                        } catch (e) {
+                            end_chip_breakdown = {};
+                        }
+                    } else {
+                        end_chip_breakdown = req.body.end_chip_breakdown;
+                    }
+                }
                 
                 // Calculate end chips total if breakdown provided
                 let calculatedEndChips = end_chips;
@@ -275,7 +319,27 @@ router.get('/:computingId',
  * GET /api/sessions/active/:computingId/:date
  * Get active (incomplete) session for a specific player and date
  */
+// Normalize date param: if missing or the literal string 'undefined', replace with today's YYYY-MM-DD
+function normalizeDateParam(req, res, next) {
+    try {
+        var dateParam = req.params && req.params.date;
+        if (!dateParam || dateParam === 'undefined') {
+            var t = new Date();
+            var y = t.getFullYear();
+            var m = String(t.getMonth() + 1).padStart(2, '0');
+            var d = String(t.getDate()).padStart(2, '0');
+            // ensure params object exists
+            req.params = req.params || {};
+            req.params.date = y + '-' + m + '-' + d;
+        }
+    } catch (e) {
+        // if anything goes wrong, leave params as-is and let validation handle it
+    }
+    next();
+}
+
 router.get('/active/:computingId/:date',
+    normalizeDateParam,
     validateParams(Joi.object({ 
         computingId: schemas.computingId,
         date: schemas.sessionDate

@@ -51,17 +51,21 @@ angular.module('pokerPalApp')
         return deferred.promise;
     };
     
-    // Get active session for a player and date
+    // Get active session for a player and date (defaults to today if date omitted)
     this.getActiveSession = function(computingId, date) {
         var deferred = $q.defer();
-        
+        date = date || this.getTodayDate();
         $http.get(API_BASE_URL + '/sessions/active/' + computingId + '/' + date).then(function(response) {
             deferred.resolve(response.data.session);
         }).catch(function(error) {
-            console.error('Get active session error:', error);
-            deferred.reject(error.data || { message: 'Failed to get active session' });
+            // Treat 404 as "no active session" (not an exceptional error)
+            if (error && error.status === 404) {
+                deferred.resolve(null);
+            } else {
+                console.error('Get active session error:', error);
+                deferred.reject(error.data || { message: 'Failed to get active session' });
+            }
         });
-        
         return deferred.promise;
     };
     

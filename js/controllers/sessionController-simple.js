@@ -22,8 +22,8 @@ angular.module('pokerPalApp')
         
         $scope.loading = true;
         
-        // Try to get active session from API
-        SessionService.getActiveSession($scope.currentUser.computing_id).then(function(session) {
+        // Try to get active session from API (pass today's date to avoid 'undefined')
+        SessionService.getActiveSession($scope.currentUser.computing_id, SessionService.getTodayDate()).then(function(session) {
             console.log('Active session found:', session);
             $scope.hasActiveSession = true;
             $scope.activeSession = session;
