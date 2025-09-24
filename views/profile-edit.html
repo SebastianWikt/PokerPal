@@ -1,0 +1,263 @@
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header text-center">
+                <h3 class="mb-0">
+                    <i class="bi bi-person-gear me-2"></i>
+                    Edit Your Profile
+                </h3>
+                <p class="text-muted mb-0 mt-2">Update your information and preferences</p>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Success Message -->
+                <div class="alert alert-success" ng-show="success">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    {{ success }}
+                </div>
+                
+                <!-- Error Message -->
+                <div class="alert alert-danger" ng-show="error">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    {{ error }}
+                </div>
+                
+                <!-- Validation Errors -->
+                <div class="alert alert-warning" ng-show="validationErrors.length > 0">
+                    <strong>Please correct the following errors:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li ng-repeat="error in validationErrors">{{ error }}</li>
+                    </ul>
+                </div>
+                
+                <!-- Profile Form -->
+                <form name="profileForm" ng-submit="saveProfile()" novalidate>
+                    <!-- Computing ID (Read-only) -->
+                    <div class="mb-3">
+                        <label for="computing_id" class="form-label">
+                            Computing ID
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            id="computing_id"
+                            ng-model="playerData.computing_id"
+                            readonly
+                            style="background-color: #f8f9fa;"
+                        >
+                        <div class="form-text text-muted">
+                            Computing ID cannot be changed
+                        </div>
+                    </div>
+                    
+                    <!-- First Name -->
+                    <div class="mb-3">
+                        <label for="first_name" class="form-label">
+                            First Name <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            id="first_name"
+                            name="first_name"
+                            ng-model="playerData.first_name"
+                            ng-change="clearMessages()"
+                            ng-keypress="handleKeyPress($event)"
+                            placeholder="Enter your first name"
+                            required
+                            ng-maxlength="100"
+                            autocomplete="given-name"
+                        >
+                        
+                        <div class="form-text text-danger" ng-show="profileForm.first_name.$touched && profileForm.first_name.$invalid">
+                            <span ng-show="profileForm.first_name.$error.required">First name is required</span>
+                            <span ng-show="profileForm.first_name.$error.maxlength">First name must not exceed 100 characters</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Last Name -->
+                    <div class="mb-3">
+                        <label for="last_name" class="form-label">
+                            Last Name <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            id="last_name"
+                            name="last_name"
+                            ng-model="playerData.last_name"
+                            ng-change="clearMessages()"
+                            ng-keypress="handleKeyPress($event)"
+                            placeholder="Enter your last name"
+                            required
+                            ng-maxlength="100"
+                            autocomplete="family-name"
+                        >
+                        
+                        <div class="form-text text-danger" ng-show="profileForm.last_name.$touched && profileForm.last_name.$invalid">
+                            <span ng-show="profileForm.last_name.$error.required">Last name is required</span>
+                            <span ng-show="profileForm.last_name.$error.maxlength">Last name must not exceed 100 characters</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Years of Experience -->
+                    <div class="mb-3">
+                        <label for="years_of_experience" class="form-label">
+                            Years of Poker Experience
+                        </label>
+                        <input 
+                            type="number" 
+                            class="form-control"
+                            id="years_of_experience"
+                            name="years_of_experience"
+                            ng-model="playerData.years_of_experience"
+                            ng-change="clearMessages(); updateSuggestedLevel()"
+                            ng-keypress="handleKeyPress($event)"
+                            placeholder="How many years have you been playing?"
+                            min="0"
+                            max="50"
+                        >
+                        
+                        <div class="form-text text-danger" ng-show="profileForm.years_of_experience.$touched && profileForm.years_of_experience.$invalid">
+                            <span ng-show="profileForm.years_of_experience.$error.min">Years of experience cannot be negative</span>
+                            <span ng-show="profileForm.years_of_experience.$error.max">Years of experience cannot exceed 50</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Experience Level -->
+                    <div class="mb-3">
+                        <label for="level" class="form-label">
+                            Experience Level
+                        </label>
+                        <select 
+                            class="form-select"
+                            id="level"
+                            name="level"
+                            ng-model="playerData.level"
+                            ng-change="clearMessages()"
+                        >
+                            <option value="">Select your experience level</option>
+                            <option ng-repeat="level in experienceLevels" value="{{ level }}">{{ level }}</option>
+                        </select>
+                        
+                        <div class="form-text text-muted">
+                            This helps us understand your poker background
+                        </div>
+                    </div>
+                    
+                    <!-- Major -->
+                    <div class="mb-4">
+                        <label for="major" class="form-label">
+                            Major/Field of Study
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            id="major"
+                            name="major"
+                            ng-model="playerData.major"
+                            ng-change="clearMessages()"
+                            ng-keypress="handleKeyPress($event)"
+                            placeholder="Enter your major or field of study"
+                            ng-maxlength="100"
+                            list="majorSuggestions"
+                        >
+                        
+                        <!-- Datalist for major suggestions -->
+                        <datalist id="majorSuggestions">
+                            <option ng-repeat="major in commonMajors" value="{{ major }}">
+                        </datalist>
+                        
+                        <div class="form-text text-danger" ng-show="profileForm.major.$touched && profileForm.major.$invalid">
+                            <span ng-show="profileForm.major.$error.maxlength">Major must not exceed 100 characters</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <button 
+                            type="button" 
+                            class="btn btn-outline-secondary"
+                            ng-click="cancel()"
+                            ng-disabled="saving"
+                        >
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Back to Home
+                        </button>
+                        
+                        <div class="d-flex gap-2">
+                            <button 
+                                type="submit" 
+                                class="btn btn-primary"
+                                ng-disabled="saving || profileForm.$invalid || !hasChanges()"
+                            >
+                                <span ng-show="saving">
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    Updating...
+                                </span>
+                                <span ng-show="!saving">
+                                    <i class="bi bi-check-circle me-2"></i>
+                                    Update Profile
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- No Changes Message -->
+                    <div class="text-center mt-3" ng-show="!hasChanges() && !saving">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Make changes to enable the update button
+                        </small>
+                    </div>
+                </form>
+                
+                <!-- Current Stats -->
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="text-primary mb-3">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Your Statistics
+                    </h6>
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <div class="h5 mb-1 text-success">$0.00</div>
+                            <small class="text-muted">Total Winnings</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h5 mb-1 text-primary">0</div>
+                            <small class="text-muted">Sessions</small>
+                        </div>
+                        <div class="col-4">
+                            <div class="h5 mb-1 text-info">-</div>
+                            <small class="text-muted">Rank</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Profile Tips -->
+                <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
+                    <h6 class="text-info mb-2">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        Profile Tips
+                    </h6>
+                    <ul class="small text-muted mb-0">
+                        <li>Keep your experience level updated as you improve</li>
+                        <li>Your profile information helps build the PokerPal community</li>
+                        <li>All fields except Computing ID can be updated anytime</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50" 
+     ng-show="saving" style="z-index: 9999;">
+    <div class="text-center text-white">
+        <div class="spinner-border mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div>Updating your profile...</div>
+    </div>
+</div>

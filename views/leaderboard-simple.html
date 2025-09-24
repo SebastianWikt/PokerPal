@@ -1,0 +1,212 @@
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="card-title mb-1">
+                                <i class="bi bi-trophy me-2"></i>
+                                Leaderboard
+                            </h2>
+                            <p class="card-text mb-0">
+                                See how you rank against other players
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-outline-dark" ng-click="toggleFilters()">
+                                <i class="bi bi-funnel me-2"></i>
+                                Filters
+                            </button>
+                            <button class="btn btn-outline-dark ms-2" ng-click="refresh()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="row" ng-show="loading">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading leaderboard...</p>
+        </div>
+    </div>
+    
+    <!-- Filters Panel -->
+    <div class="row mb-4" ng-show="showFilters">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>
+                        Filters & Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form ng-submit="applyFilters()">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label class="form-label">Timeframe</label>
+                                <select class="form-select" ng-model="filters.timeframe">
+                                    <option value="all">All Time</option>
+                                    <option value="month">This Month</option>
+                                    <option value="week">This Week</option>
+                                    <option value="today">Today</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Sort By</label>
+                                <select class="form-select" ng-model="filters.sort">
+                                    <option value="winnings">Total Winnings</option>
+                                    <option value="sessions">Session Count</option>
+                                    <option value="recent">Recent Activity</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Results Per Page</label>
+                                <select class="form-select" ng-model="filters.limit">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Apply
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" ng-click="resetFilters()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Summary -->
+    <div class="row mb-3" ng-show="!loading && leaderboard.length > 0">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        {{getFilterSummary()}} • Showing {{leaderboard.length}} players
+                    </small>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>
+                        Last updated: {{lastUpdated | date:'short'}}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Table -->
+    <div class="row" ng-show="!loading">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th class="text-center" style="width: 80px;">Rank</th>
+                                    <th>Player</th>
+                                    <th class="text-end">Winnings</th>
+                                    <th class="text-center d-none d-md-table-cell">Sessions</th>
+                                    <th class="text-center d-none d-lg-table-cell">Win Rate</th>
+                                    <th class="text-center d-none d-lg-table-cell">Last Session</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="player in leaderboard" ng-class="{'table-warning': currentUser && player.computing_id === currentUser.computing_id}">
+                                    <!-- Rank -->
+                                    <td class="text-center">
+                                        <span class="badge" ng-class="getRankBadgeClass(player.rank || ($index + 1))">
+                                            {{player.rank || ($index + 1)}}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Player -->
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-3">
+                                                {{getPlayerInitials(player.first_name, player.last_name)}}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">
+                                                    {{player.display_name || (player.first_name + ' ' + player.last_name)}}
+                                                    <span ng-show="currentUser && player.computing_id === currentUser.computing_id" class="badge bg-info ms-2">You</span>
+                                                </div>
+                                                <small class="text-muted d-md-none">
+                                                    {{player.total_sessions || 0}} sessions
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Winnings -->
+                                    <td class="text-end">
+                                        <div class="fw-bold" ng-class="getWinningsColorClass(player.total_winnings)">
+                                            {{formatCurrency(player.total_winnings)}}
+                                        </div>
+                                        <small class="text-muted d-lg-none" ng-show="player.win_rate !== undefined">
+                                            {{formatPercentage(player.win_rate)}} win rate
+                                        </small>
+                                    </td>
+                                    
+                                    <!-- Sessions (hidden on mobile) -->
+                                    <td class="text-center d-none d-md-table-cell">
+                                        <span class="badge bg-secondary">{{player.total_sessions || 0}}</span>
+                                    </td>
+                                    
+                                    <!-- Win Rate (hidden on smaller screens) -->
+                                    <td class="text-center d-none d-lg-table-cell">
+                                        <span ng-class="getWinRateColorClass(player.win_rate)">
+                                            {{formatPercentage(player.win_rate)}}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Last Session (hidden on smaller screens) -->
+                                    <td class="text-center d-none d-lg-table-cell">
+                                        <small class="text-muted">
+                                            {{formatLastSessionDate(player.last_session_date)}}
+                                        </small>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Empty State -->
+    <div class="row" ng-show="!loading && leaderboard.length === 0">
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-trophy" style="font-size: 4rem; color: #dee2e6;"></i>
+            <h4 class="text-muted mt-3">No Players Found</h4>
+            <p class="text-muted">No players match the current filters.</p>
+            <button class="btn btn-outline-primary" ng-click="resetFilters()">
+                <i class="bi bi-arrow-clockwise me-2"></i>
+                Reset Filters
+            </button>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,556 @@
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="card-title mb-1">
+                                <i class="bi bi-shield-check me-2"></i>
+                                Admin Dashboard
+                            </h2>
+                            <p class="card-text mb-0">
+                                Manage PokerPal system settings and data
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <button class="btn btn-outline-dark" ng-click="refreshData()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                Refresh Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="row" ng-show="loading">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Loading admin data...</p>
+        </div>
+    </div>
+    
+    <!-- Messages -->
+    <div class="alert alert-success" ng-show="success">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        {{ success }}
+    </div>
+    
+    <div class="alert alert-danger" ng-show="error">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ error }}
+    </div>
+    
+    <!-- Main Content -->
+    <div ng-show="!loading">
+        <!-- Navigation Tabs -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <button class="nav-link" ng-class="{ active: activeTab === 'dashboard' }" ng-click="switchTab('dashboard')">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Dashboard
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" ng-class="{ active: activeTab === 'chip-values' }" ng-click="switchTab('chip-values')">
+                            <i class="bi bi-coin me-2"></i>
+                            Chip Values
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" ng-class="{ active: activeTab === 'session-override' }" ng-click="switchTab('session-override')">
+                            <i class="bi bi-pencil-square me-2"></i>
+                            Session Override
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" ng-class="{ active: activeTab === 'audit-logs' }" ng-click="switchTab('audit-logs')">
+                            <i class="bi bi-journal-text me-2"></i>
+                            Audit Logs
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" ng-class="{ active: activeTab === 'players' }" ng-click="switchTab('players')">
+                            <i class="bi bi-people me-2"></i>
+                            Players
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- Dashboard Tab -->
+        <div ng-show="activeTab === 'dashboard'" ng-if="adminStats">
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-people text-primary" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2">{{ adminStats.players.total }}</h3>
+                            <p class="text-muted mb-0">Total Players</p>
+                            <small class="text-success">{{ adminStats.players.active }} active</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-calendar-event text-info" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2">{{ adminStats.sessions.total }}</h3>
+                            <p class="text-muted mb-0">Total Sessions</p>
+                            <small class="text-warning">{{ adminStats.sessions.incomplete }} incomplete</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-currency-dollar text-success" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2">{{ formatCurrency(adminStats.winnings.total) }}</h3>
+                            <p class="text-muted mb-0">Total Winnings</p>
+                            <small class="text-info">{{ formatCurrency(adminStats.winnings.average_per_player) }} avg/player</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="bi bi-shield-check text-warning" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2">{{ adminStats.sessions.overridden }}</h3>
+                            <p class="text-muted mb-0">Overridden Sessions</p>
+                            <small class="text-danger">{{ adminStats.sessions.override_rate }}% rate</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Information -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-gear me-2"></i>
+                                System Configuration
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row">
+                                <dt class="col-sm-6">Chip Colors:</dt>
+                                <dd class="col-sm-6">{{ adminStats.chip_values.total_colors }}</dd>
+                                
+                                <dt class="col-sm-6">Admin Users:</dt>
+                                <dd class="col-sm-6">{{ adminStats.players.admins }}</dd>
+                                
+                                <dt class="col-sm-6">Recent Audit Actions:</dt>
+                                <dd class="col-sm-6">{{ adminStats.audit.recent_actions }}</dd>
+                                
+                                <dt class="col-sm-6">Last Updated:</dt>
+                                <dd class="col-sm-6">{{ formatDate(adminStats.generated_at) }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-coin me-2"></i>
+                                Current Chip Values
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6" ng-repeat="(color, value) in adminStats.chip_values.values">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="chip-color me-2" ng-style="{'background-color': color}"></span>
+                                        <strong>{{ getChipColorDisplay(color) }}:</strong>
+                                        <span class="ms-auto">{{ formatCurrency(value) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Chip Values Tab -->
+        <div ng-show="activeTab === 'chip-values'">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-coin me-2"></i>
+                                Chip Value Configuration
+                            </h5>
+                            <div ng-show="!editingChipValues">
+                                <button class="btn btn-primary" ng-click="startEditingChipValues()">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    Edit Values
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div ng-show="!editingChipValues">
+                                <!-- Display Mode -->
+                                <div class="row">
+                                    <div class="col-md-6" ng-repeat="(color, value) in chipValues">
+                                        <div class="d-flex align-items-center mb-3 p-3 bg-light rounded">
+                                            <span class="chip-color me-3" ng-style="{'background-color': color}"></span>
+                                            <div>
+                                                <strong>{{ getChipColorDisplay(color) }}</strong>
+                                                <div class="h5 mb-0 text-success">{{ formatCurrency(value) }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div ng-show="editingChipValues">
+                                <!-- Edit Mode -->
+                                <form ng-submit="saveChipValues()">
+                                    <div class="row">
+                                        <div class="col-md-6" ng-repeat="(color, value) in chipValues">
+                                            <div class="mb-3">
+                                                <label class="form-label">
+                                                    <span class="chip-color me-2" ng-style="{'background-color': color}"></span>
+                                                    {{ getChipColorDisplay(color) }}
+                                                </label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text">$</span>
+                                                    <input 
+                                                        type="number" 
+                                                        class="form-control"
+                                                        ng-model="chipValues[color]"
+                                                        min="0.01"
+                                                        max="10000"
+                                                        step="0.01"
+                                                        required
+                                                    >
+                                                    <button 
+                                                        type="button" 
+                                                        class="btn btn-outline-danger"
+                                                        ng-click="removeChipColor(color)"
+                                                        ng-show="getChipColorsInUse().length > 1"
+                                                    >
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Add New Color -->
+                                    <div class="mb-3">
+                                        <label class="form-label">Add New Chip Color</label>
+                                        <select class="form-select" ng-model="newChipColor">
+                                            <option value="">Select a color to add</option>
+                                            <option ng-repeat="color in availableChipColors" 
+                                                    ng-if="!chipValues[color]" 
+                                                    value="{{ color }}">
+                                                {{ getChipColorDisplay(color) }}
+                                            </option>
+                                        </select>
+                                        <button 
+                                            type="button" 
+                                            class="btn btn-outline-primary mt-2"
+                                            ng-click="addChipColor(newChipColor); newChipColor = ''"
+                                            ng-disabled="!newChipColor"
+                                        >
+                                            <i class="bi bi-plus-circle me-2"></i>
+                                            Add Color
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex gap-2">
+                                        <button 
+                                            type="submit" 
+                                            class="btn btn-success"
+                                            ng-disabled="!hasChipValueChanges() || loading"
+                                        >
+                                            <span ng-show="loading">
+                                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                                Saving...
+                                            </span>
+                                            <span ng-show="!loading">
+                                                <i class="bi bi-check-circle me-2"></i>
+                                                Save Changes
+                                            </span>
+                                        </button>
+                                        
+                                        <button 
+                                            type="button" 
+                                            class="btn btn-outline-secondary"
+                                            ng-click="cancelEditingChipValues()"
+                                            ng-disabled="loading"
+                                        >
+                                            <i class="bi bi-x-circle me-2"></i>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Important Notes
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <strong>Warning:</strong> Changing chip values will recalculate all player winnings based on their session history.
+                            </div>
+                            <ul class="small">
+                                <li>All player totals will be updated automatically</li>
+                                <li>Leaderboard rankings may change</li>
+                                <li>This action is logged in the audit trail</li>
+                                <li>Changes cannot be undone</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Session Override Tab -->
+        <div ng-show="activeTab === 'session-override'">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                Override Session Winnings
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form ng-submit="overrideSession()">
+                                <div class="mb-3">
+                                    <label class="form-label">Session ID <span class="text-danger">*</span></label>
+                                    <input 
+                                        type="number" 
+                                        class="form-control"
+                                        ng-model="overrideForm.sessionId"
+                                        placeholder="Enter session ID"
+                                        required
+                                    >
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">New Net Winnings <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input 
+                                            type="number" 
+                                            class="form-control"
+                                            ng-model="overrideForm.netWinnings"
+                                            placeholder="0.00"
+                                            step="0.01"
+                                            required
+                                        >
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Reason for Override</label>
+                                    <textarea 
+                                        class="form-control"
+                                        ng-model="overrideForm.reason"
+                                        placeholder="Optional reason for this override"
+                                        rows="3"
+                                        maxlength="500"
+                                    ></textarea>
+                                    <div class="form-text">{{ overrideForm.reason.length || 0 }}/500 characters</div>
+                                </div>
+                                
+                                <button 
+                                    type="submit" 
+                                    class="btn btn-warning w-100"
+                                    ng-disabled="loading"
+                                >
+                                    <span ng-show="loading">
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        Processing...
+                                    </span>
+                                    <span ng-show="!loading">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        Apply Override
+                                    </span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-shield-exclamation me-2"></i>
+                                Override Guidelines
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-danger">
+                                <strong>Admin Override:</strong> Use this feature carefully as it directly modifies player winnings.
+                            </div>
+                            <h6>When to use overrides:</h6>
+                            <ul class="small">
+                                <li>Incorrect chip counting in photos</li>
+                                <li>Technical issues during session</li>
+                                <li>Player disputes with valid evidence</li>
+                                <li>System errors or bugs</li>
+                            </ul>
+                            <h6>What happens:</h6>
+                            <ul class="small">
+                                <li>Session is marked as admin-overridden</li>
+                                <li>Player's total winnings are recalculated</li>
+                                <li>Action is logged in audit trail</li>
+                                <li>Leaderboard is updated automatically</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Audit Logs Tab -->
+        <div ng-show="activeTab === 'audit-logs'">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-journal-text me-2"></i>
+                        Recent Admin Actions
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Admin</th>
+                                    <th>Action</th>
+                                    <th>Target</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="log in auditLogs">
+                                    <td>
+                                        <small>{{ formatDate(log.timestamp) }}</small>
+                                    </td>
+                                    <td>
+                                        <strong>{{ log.admin_id }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ formatAuditAction(log.action) }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ log.target_table }}/{{ log.target_id }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <span ng-if="log.new_values.reason">{{ getOverrideReasonDisplay(log.new_values.reason) }}</span>
+                                            <span ng-if="!log.new_values.reason">System action</span>
+                                        </small>
+                                    </td>
+                                </tr>
+                                <tr ng-if="auditLogs.length === 0">
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        No audit logs available
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Players Tab -->
+        <div ng-show="activeTab === 'players'">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people me-2"></i>
+                        Player Management
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Player</th>
+                                    <th>Computing ID</th>
+                                    <th class="text-end">Total Winnings</th>
+                                    <th class="text-center">Sessions</th>
+                                    <th class="text-center">Overrides</th>
+                                    <th class="text-center">Admin</th>
+                                    <th class="text-center">Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr ng-repeat="player in players">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="user-avatar me-3">
+                                                {{ player.first_name.charAt(0) + player.last_name.charAt(0) }}
+                                            </div>
+                                            <strong>{{ player.display_name }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code>{{ player.computing_id }}</code>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong ng-class="player.total_winnings >= 0 ? 'text-success' : 'text-danger'">
+                                            {{ formatCurrency(player.total_winnings) }}
+                                        </strong>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ player.completed_sessions }}</span>
+                                        <span ng-if="player.incomplete_sessions > 0" class="badge bg-warning ms-1">{{ player.incomplete_sessions }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span ng-if="player.overridden_sessions > 0" class="badge bg-danger">{{ player.overridden_sessions }}</span>
+                                        <span ng-if="player.overridden_sessions === 0" class="text-muted">—</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span ng-if="player.is_admin" class="badge bg-warning">Admin</span>
+                                        <span ng-if="!player.is_admin" class="text-muted">—</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <small class="text-muted">{{ formatDate(player.created_at) }}</small>
+                                    </td>
+                                </tr>
+                                <tr ng-if="players.length === 0">
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        No players found
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

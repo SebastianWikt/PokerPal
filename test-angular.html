@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="testApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AngularJS Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; margin: 10px 0; }
+        .success { color: green; background: #e6ffe6; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>AngularJS Loading Test</h1>
+    
+    <div ng-controller="TestController">
+        <p>If AngularJS is working, you should see: <strong>{{message}}</strong></p>
+        <p>Current time: {{currentTime}}</p>
+        <button ng-click="updateTime()">Update Time</button>
+    </div>
+    
+    <div id="debug-info">
+        <h3>Debug Information:</h3>
+        <div id="angular-status">Checking AngularJS...</div>
+        <div id="console-errors"></div>
+    </div>
+
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    
+    <script>
+        // Capture console errors
+        const originalError = console.error;
+        const errors = [];
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+        
+        // Test AngularJS
+        angular.module('testApp', [])
+        .controller('TestController', ['$scope', function($scope) {
+            $scope.message = 'AngularJS is working!';
+            $scope.currentTime = new Date().toLocaleTimeString();
+            
+            $scope.updateTime = function() {
+                $scope.currentTime = new Date().toLocaleTimeString();
+            };
+        }]);
+        
+        // Check if AngularJS loaded
+        setTimeout(function() {
+            const statusDiv = document.getElementById('angular-status');
+            const errorsDiv = document.getElementById('console-errors');
+            
+            if (typeof angular !== 'undefined') {
+                statusDiv.innerHTML = '<div class="success">✓ AngularJS loaded successfully</div>';
+            } else {
+                statusDiv.innerHTML = '<div class="error">✗ AngularJS failed to load</div>';
+            }
+            
+            if (errors.length > 0) {
+                errorsDiv.innerHTML = '<div class="error"><strong>Console Errors:</strong><br>' + 
+                    errors.map(e => '• ' + e).join('<br>') + '</div>';
+            } else {
+                errorsDiv.innerHTML = '<div class="success">✓ No console errors detected</div>';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

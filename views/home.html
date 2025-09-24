@@ -1,0 +1,97 @@
+<div class="container">
+    <!-- Welcome Header -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 text-primary mb-3">
+                    <i class="bi bi-suit-spade-fill me-3"></i>
+                    Welcome to PokerPal
+                </h1>
+                <p class="lead text-muted">
+                    Hello, <strong>{{ currentUser.first_name }} {{ currentUser.last_name }}</strong>!
+                </p>
+                <div class="badge bg-primary fs-6 px-3 py-2">
+                    Total Winnings: <strong ng-class="getWinningsColorClass()">{{ formatCurrency(currentUser.total_winnings) }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Navigation Buttons -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="d-grid gap-4">
+                <!-- Create/Edit Profile Button -->
+                <button class="btn btn-primary btn-lg py-4" ng-click="navigateToProfile()">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-person-gear me-3" style="font-size: 2rem;"></i>
+                        <div class="text-start">
+                            <div class="fw-bold fs-4">Create/Edit Profile</div>
+                            <small class="opacity-75">Update your personal information and experience level</small>
+                        </div>
+                    </div>
+                </button>
+                
+                <!-- Log Session Button -->
+                <button class="btn btn-success btn-lg py-4" ng-click="navigateToSession()">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-camera me-3" style="font-size: 2rem;"></i>
+                        <div class="text-start">
+                            <div class="fw-bold fs-4">Log Session</div>
+                            <small class="opacity-75">Check in/out and track your poker session winnings</small>
+                        </div>
+                    </div>
+                </button>
+                
+                <!-- View Results Button -->
+                <button class="btn btn-info btn-lg py-4" ng-click="navigateToLeaderboard()">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="bi bi-trophy me-3" style="font-size: 2rem;"></i>
+                        <div class="text-start">
+                            <div class="fw-bold fs-4">View Results</div>
+                            <small class="opacity-75">See leaderboard and compare your performance</small>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Section (if admin) -->
+    <div class="row justify-content-center mt-5" ng-show="isAdmin()">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark text-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Admin Functions
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <button class="btn btn-warning btn-lg" ng-click="navigateToAdmin()">
+                        <i class="bi bi-gear me-2"></i>
+                        Admin Dashboard
+                    </button>
+                    <p class="text-muted mt-2 mb-0">
+                        Manage chip values, override sessions, and view audit logs
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.btn {
+    transition: all 0.3s ease;
+}
+
+.badge {
+    font-size: 1rem !important;
+}
+</style>

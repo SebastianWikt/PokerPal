@@ -1,0 +1,3 @@
+// Mock JPEG file for E2E testing - end session chips
+const sampleImages = require('./sampleImages');
+module.exports = sampleImages.sampleImages.highResImage;

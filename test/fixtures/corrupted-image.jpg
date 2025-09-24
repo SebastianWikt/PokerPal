@@ -1,0 +1,3 @@
+// Corrupted image file for testing error handling
+const sampleImages = require('./sampleImages');
+module.exports = sampleImages.sampleImages.corruptedImage;

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pokerPalApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerPal Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; margin: 10px 0; }
+        .success { color: green; background: #e6ffe6; padding: 10px; margin: 10px 0; }
+        .info { color: blue; background: #e6f3ff; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>PokerPal Debug</h1>
+    
+    <div id="debug-status">
+        <h3>Loading Status:</h3>
+        <div id="angular-status">Checking AngularJS...</div>
+        <div id="app-status">Checking PokerPal app...</div>
+        <div id="env-status">Checking environment config...</div>
+        <div id="console-errors"></div>
+    </div>
+    
+    <div ng-controller="TestController" style="border: 2px solid green; padding: 10px; margin: 10px 0;">
+        <h3>Test Controller (should work if app loads):</h3>
+        <p>Test message: {{testMessage}}</p>
+        <p>API Base URL: {{apiUrl}}</p>
+    </div>
+
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+    
+    <!-- Environment Configuration -->
+    <script src="js/config/environment.js"></script>
+    
+    <!-- AngularJS App Files -->
+    <script src="js/app.js"></script>
+    
+    <!-- Services (load one by one to find the problematic one) -->
+    <script src="js/services/errorService.js"></script>
+    <script src="js/services/errorInterceptor.js"></script>
+    <script src="js/services/validationService.js"></script>
+    <script src="js/services/authService.js"></script>
+    
+    <script>
+        // Capture console errors
+        const originalError = console.error;
+        const errors = [];
+        console.error = function(...args) {
+            errors.push(args.join(' '));
+            originalError.apply(console, args);
+        };
+        
+        // Add a simple test controller to the existing app
+        try {
+            angular.module('pokerPalApp')
+            .controller('TestController', ['$scope', 'API_BASE_URL', function($scope, API_BASE_URL) {
+                $scope.testMessage = 'PokerPal app is working!';
+                $scope.apiUrl = API_BASE_URL;
+                console.log('TestController loaded successfully');
+            }]);
+        } catch (e) {
+            console.error('Failed to add TestController:', e);
+        }
+        
+        // Check status after page loads
+        setTimeout(function() {
+            const angularStatus = document.getElementById('angular-status');
+            const appStatus = document.getElementById('app-status');
+            const envStatus = document.getElementById('env-status');
+            const errorsDiv = document.getElementById('console-errors');
+            
+            // Check AngularJS
+            if (typeof angular !== 'undefined') {
+                angularStatus.innerHTML = '<div class="success">✓ AngularJS loaded</div>';
+            } else {
+                angularStatus.innerHTML = '<div class="error">✗ AngularJS failed to load</div>';
+            }
+            
+            // Check PokerPal app
+            try {
+                const app = angular.module('pokerPalApp');
+                appStatus.innerHTML = '<div class="success">✓ PokerPal app module found</div>';
+            } catch (e) {
+                appStatus.innerHTML = '<div class="error">✗ PokerPal app module not found: ' + e.message + '</div>';
+            }
+            
+            // Check environment config
+            if (typeof window.ENV_CONFIG !== 'undefined') {
+                envStatus.innerHTML = '<div class="success">✓ Environment config loaded: ' + window.ENV_CONFIG.apiBaseUrl + '</div>';
+            } else {
+                envStatus.innerHTML = '<div class="error">✗ Environment config not found</div>';
+            }
+            
+            // Show errors
+            if (errors.length > 0) {
+                errorsDiv.innerHTML = '<div class="error"><strong>Console Errors:</strong><br>' + 
+                    errors.map(e => '• ' + e).join('<br>') + '</div>';
+            } else {
+                errorsDiv.innerHTML = '<div class="success">✓ No console errors detected</div>';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

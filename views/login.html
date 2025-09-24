@@ -1,0 +1,121 @@
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <h2 class="card-title text-primary">
+                        <strong>Welcome to PokerPal</strong>
+                    </h2>
+                    <p class="text-muted">Track your poker sessions and winnings</p>
+                </div>
+                
+                <!-- Error Display -->
+                <error-display context="login" max-errors="2"></error-display>
+                
+                <!-- Login Form -->
+                <form name="loginForm" ng-submit="login()" novalidate>
+                    <div class="mb-3">
+                        <label for="computing_id" class="form-label">Computing ID</label>
+                        <input 
+                            type="text" 
+                            class="form-control"
+                            id="computing_id"
+                            name="computing_id"
+                            ng-model="loginData.computing_id"
+                            ng-change="clearError()"
+                            ng-keypress="handleKeyPress($event)"
+                            placeholder="Enter your Computing ID"
+                            validation-feedback="['required', 'computingId']"
+                            field-name="Computing ID"
+                            autocomplete="username"
+                        >
+                        
+                        <!-- Validation Messages -->
+                        <div class="form-text text-danger" ng-show="loginForm.computing_id.$touched && loginForm.computing_id.$invalid">
+                            <span ng-show="loginForm.computing_id.$error.required">Computing ID is required</span>
+                            <span ng-show="loginForm.computing_id.$error.minlength">Computing ID must be at least 3 characters</span>
+                            <span ng-show="loginForm.computing_id.$error.maxlength">Computing ID must not exceed 50 characters</span>
+                            <span ng-show="loginForm.computing_id.$error.pattern">Computing ID must contain only letters and numbers</span>
+                        </div>
+                        
+                        <!-- Custom validation message -->
+                        <div class="form-text text-danger" ng-show="!validateComputingId() && loginData.computing_id">
+                            {{ getValidationError() }}
+                        </div>
+                    </div>
+                    
+                    <!-- Error Message -->
+                    <div class="alert alert-danger" ng-show="error">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {{ error }}
+                    </div>
+                    
+                    <!-- Create Profile Button -->
+                    <div class="mb-3" ng-show="showCreateProfile">
+                        <button 
+                            type="button" 
+                            class="btn btn-outline-primary w-100"
+                            ng-click="createProfile()"
+                        >
+                            <i class="bi bi-person-plus me-2"></i>
+                            Create Profile
+                        </button>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">or</small>
+                        </div>
+                    </div>
+                    
+                    <!-- Login Button -->
+                    <button 
+                        type="submit" 
+                        class="btn btn-primary w-100"
+                        ng-disabled="loading || loginForm.$invalid || !validateComputingId()"
+                    >
+                        <span ng-show="loading">
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            Signing in...
+                        </span>
+                        <span ng-show="!loading">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>
+                            Sign In
+                        </span>
+                    </button>
+                </form>
+                
+                <!-- Help Text -->
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        Don't have an account? 
+                        <a href="#!/profile/create" class="text-decoration-none">Create a profile</a>
+                    </small>
+                </div>
+                
+                <!-- Info Section -->
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h6 class="text-primary mb-2">
+                        <i class="bi bi-info-circle me-2"></i>
+                        How it works
+                    </h6>
+                    <ul class="small text-muted mb-0">
+                        <li>Enter your Computing ID to sign in</li>
+                        <li>Track your poker session check-ins and check-outs</li>
+                        <li>View your winnings and leaderboard rankings</li>
+                        <li>Upload photos of your chip stacks for automatic counting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50" 
+     ng-show="loading" style="z-index: 9999;">
+    <div class="text-center text-white">
+        <div class="spinner-border mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div>Signing you in...</div>
+    </div>
+</div>

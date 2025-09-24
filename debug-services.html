@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pokerPalApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerPal Services Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; margin: 10px 0; }
+        .success { color: green; background: #e6ffe6; padding: 10px; margin: 10px 0; }
+        .step { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>PokerPal Services Debug</h1>
+    
+    <div ng-controller="ServiceTestController">
+        <p>Basic test: {{message}}</p>
+        <div id="service-tests"></div>
+    </div>
+
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+    
+    <!-- Environment Configuration -->
+    <script src="js/config/environment.js"></script>
+    
+    <!-- AngularJS App Files -->
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Track loading progress
+        const loadingSteps = [];
+        
+        function logStep(step, success, error) {
+            loadingSteps.push({step, success, error});
+            updateDisplay();
+        }
+        
+        function updateDisplay() {
+            const container = document.getElementById('service-tests');
+            container.innerHTML = loadingSteps.map(s => 
+                `<div class="step ${s.success ? 'success' : 'error'}">
+                    ${s.success ? '✓' : '✗'} ${s.step}
+                    ${s.error ? '<br>Error: ' + s.error : ''}
+                </div>`
+            ).join('');
+        }
+        
+        // Test controller
+        try {
+            angular.module('pokerPalApp')
+            .controller('ServiceTestController', ['$scope', function($scope) {
+                $scope.message = 'App loaded successfully!';
+                logStep('Basic controller', true);
+            }]);
+            logStep('App module and controller creation', true);
+        } catch (e) {
+            logStep('App module and controller creation', false, e.message);
+        }
+    </script>
+    
+    <!-- Load services one by one -->
+    <script>
+        // Load ErrorService
+        try {
+            document.write('<script src="js/services/errorService.js"><\/script>');
+            logStep('ErrorService loading', true);
+        } catch (e) {
+            logStep('ErrorService loading', false, e.message);
+        }
+    </script>
+    
+    <script>
+        // Test ErrorService after loading
+        setTimeout(function() {
+            try {
+                const injector = angular.injector(['pokerPalApp']);
+                const errorService = injector.get('ErrorService');
+                logStep('ErrorService injection', true);
+            } catch (e) {
+                logStep('ErrorService injection', false, e.message);
+            }
+        }, 100);
+    </script>
+    
+    <!-- Load ErrorInterceptor -->
+    <script>
+        try {
+            document.write('<script src="js/services/errorInterceptor.js"><\/script>');
+            logStep('ErrorInterceptor loading', true);
+        } catch (e) {
+            logStep('ErrorInterceptor loading', false, e.message);
+        }
+    </script>
+    
+    <!-- Load ValidationService -->
+    <script>
+        try {
+            document.write('<script src="js/services/validationService.js"><\/script>');
+            logStep('ValidationService loading', true);
+        } catch (e) {
+            logStep('ValidationService loading', false, e.message);
+        }
+    </script>
+    
+    <!-- Load AuthService -->
+    <script>
+        try {
+            document.write('<script src="js/services/authService.js"><\/script>');
+            logStep('AuthService loading', true);
+        } catch (e) {
+            logStep('AuthService loading', false, e.message);
+        }
+    </script>
+    
+    <script>
+        // Final test after all services loaded
+        setTimeout(function() {
+            try {
+                const scope = angular.element(document.querySelector('[ng-controller="ServiceTestController"]')).scope();
+                if (scope && scope.message) {
+                    logStep('Final bootstrap test', true);
+                } else {
+                    logStep('Final bootstrap test', false, 'Scope not found or message not set');
+                }
+            } catch (e) {
+                logStep('Final bootstrap test', false, e.message);
+            }
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+// Mock JPEG file for E2E testing
+// This would normally be a binary image file, but for testing purposes
+// we'll create a simple text representation that the test framework can handle
+const sampleImages = require('./sampleImages');
+module.exports = sampleImages.sampleImages.multipleChips;

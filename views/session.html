@@ -1,0 +1,465 @@
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h2 class="card-title mb-1">
+                        <i class="bi bi-camera me-2"></i>
+                        Session Tracking
+                    </h2>
+                    <p class="card-text mb-0">
+                        Track your poker sessions with photo verification
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div class="row" ng-show="loading">
+        <div class="col-12 text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2 text-muted">Checking for active sessions...</p>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div ng-show="!loading">
+        <!-- Success Message -->
+        <div class="alert alert-success" ng-show="success">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            {{ success }}
+        </div>
+        
+        <!-- Error Message -->
+        <div class="alert alert-danger" ng-show="error">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {{ error }}
+        </div>
+        
+        <!-- Validation Errors -->
+        <div class="alert alert-warning" ng-show="validationErrors.length > 0">
+            <strong>Please correct the following errors:</strong>
+            <ul class="mb-0 mt-2">
+                <li ng-repeat="error in validationErrors">{{ error }}</li>
+            </ul>
+        </div>
+        
+        <!-- Active Session Info -->
+        <div class="row mb-4" ng-show="hasActiveSession">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-play-circle-fill me-2"></i>
+                            Active Session - {{ formatDate(activeSession.session_date) }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Start Chips:</strong> {{ formatCurrency(activeSession.start_chips) }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Chip Breakdown:</strong> {{ getChipBreakdownDisplay(activeSession.start_chip_breakdown) }}
+                            </div>
+                        </div>
+                        <div class="row mt-2" ng-show="activeSession.start_photo_url">
+                            <div class="col-12">
+                                <strong>Start Photo:</strong>
+                                <img ng-src="{{ activeSession.start_photo_url }}" class="img-thumbnail ms-2" style="max-height: 100px;" alt="Start photo">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Session Type Selector -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Session Type</h5>
+                        <div class="session-type-selector">
+                            <button 
+                                type="button" 
+                                class="session-type-btn check-in-btn"
+                                ng-class="{ active: sessionType === 'check-in' }"
+                                ng-click="switchSessionType('check-in')"
+                                ng-disabled="saving"
+                            >
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                Check In
+                                <div class="small mt-1">Start your session</div>
+                            </button>
+                            
+                            <button 
+                                type="button" 
+                                class="session-type-btn check-out-btn"
+                                ng-class="{ active: sessionType === 'check-out' }"
+                                ng-click="switchSessionType('check-out')"
+                                ng-disabled="saving || !hasActiveSession"
+                            >
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Check Out
+                                <div class="small mt-1">End your session</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Session Form -->
+        <form name="sessionForm" ng-submit="submitSession()" novalidate>
+            <div class="row">
+                <!-- Session Details -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-calendar-event me-2"></i>
+                                Session Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Session Date -->
+                            <div class="mb-3">
+                                <label for="session_date" class="form-label">
+                                    Session Date <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="date" 
+                                    class="form-control"
+                                    id="session_date"
+                                    name="session_date"
+                                    ng-model="sessionData.session_date"
+                                    ng-change="onDateChange()"
+                                    max="{{ getTodayDate() }}"
+                                    required
+                                >
+                                
+                                <div class="form-text text-danger" ng-show="sessionForm.session_date.$touched && sessionForm.session_date.$invalid">
+                                    <span ng-show="sessionForm.session_date.$error.required">Session date is required</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Check-in Fields -->
+                            <div ng-show="sessionType === 'check-in'">
+                                <div class="mb-3">
+                                    <label for="start_chips" class="form-label">
+                                        Starting Chips (Total Value)
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input 
+                                            type="number" 
+                                            class="form-control"
+                                            id="start_chips"
+                                            name="start_chips"
+                                            ng-model="sessionData.start_chips"
+                                            ng-change="clearMessages()"
+                                            placeholder="0.00"
+                                            min="0"
+                                            step="0.01"
+                                        >
+                                    </div>
+                                    <div class="form-text text-muted">
+                                        Enter total value or use chip breakdown below
+                                    </div>
+                                </div>
+                                
+                                <!-- Start Chip Breakdown -->
+                                <div class="mb-3">
+                                    <label class="form-label">Starting Chip Breakdown</label>
+                                    <div class="chip-breakdown">
+                                        <div class="row g-2">
+                                            <div class="col-6 col-md-4" ng-repeat="color in chipColors">
+                                                <label class="form-label small">
+                                                    <span class="chip-color" ng-style="{'background-color': color}"></span>
+                                                    {{ color | titlecase }} (${{ chipValues[color] }})
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control form-control-sm"
+                                                    ng-model="sessionData.start_chip_breakdown[color]"
+                                                    ng-change="updateChipBreakdown(color, sessionData.start_chip_breakdown[color], true)"
+                                                    placeholder="0"
+                                                    min="0"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Check-out Fields -->
+                            <div ng-show="sessionType === 'check-out'">
+                                <div class="mb-3">
+                                    <label for="end_chips" class="form-label">
+                                        Ending Chips (Total Value)
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input 
+                                            type="number" 
+                                            class="form-control"
+                                            id="end_chips"
+                                            name="end_chips"
+                                            ng-model="sessionData.end_chips"
+                                            ng-change="clearMessages()"
+                                            placeholder="0.00"
+                                            min="0"
+                                            step="0.01"
+                                        >
+                                    </div>
+                                    <div class="form-text text-muted">
+                                        Enter total value or use chip breakdown below
+                                    </div>
+                                </div>
+                                
+                                <!-- End Chip Breakdown -->
+                                <div class="mb-3">
+                                    <label class="form-label">Ending Chip Breakdown</label>
+                                    <div class="chip-breakdown">
+                                        <div class="row g-2">
+                                            <div class="col-6 col-md-4" ng-repeat="color in chipColors">
+                                                <label class="form-label small">
+                                                    <span class="chip-color" ng-style="{'background-color': color}"></span>
+                                                    {{ color | titlecase }} (${{ chipValues[color] }})
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    class="form-control form-control-sm"
+                                                    ng-model="sessionData.end_chip_breakdown[color]"
+                                                    ng-change="updateChipBreakdown(color, sessionData.end_chip_breakdown[color], false)"
+                                                    placeholder="0"
+                                                    min="0"
+                                                >
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photo Upload -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <i class="bi bi-camera me-2"></i>
+                                Photo Verification
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <!-- Photo Upload Area -->
+                            <div class="photo-upload-area" ng-click="document.getElementById('photoInput').click()">
+                                <div ng-show="!photoPreview">
+                                    <i class="bi bi-camera" style="font-size: 3rem; color: #007bff;"></i>
+                                    <h5 class="mt-3">Upload Photo</h5>
+                                    <p class="text-muted">
+                                        Take a photo of your chip stack<br>
+                                        <small>Click here or drag and drop</small>
+                                    </p>
+                                </div>
+                                
+                                <div ng-show="photoPreview">
+                                    <img ng-src="{{ photoPreview }}" class="photo-preview" alt="Photo preview">
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" ng-click="clearPhoto(); $event.stopPropagation();">
+                                            <i class="bi bi-trash me-1"></i>
+                                            Remove Photo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <input 
+                                type="file" 
+                                id="photoInput"
+                                accept="image/*"
+                                style="display: none;"
+                                onchange="angular.element(this).scope().handleFileSelect(event)"
+                            >
+                            
+                            <!-- Photo Error -->
+                            <div class="alert alert-danger mt-3" ng-show="photoError">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {{ photoError }}
+                            </div>
+                            
+                            <!-- Computer Vision Analysis -->
+                            <div class="mt-3" ng-show="photoPreview && cvAvailable">
+                                <div class="d-grid">
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-info"
+                                        ng-click="analyzePhoto()"
+                                        ng-disabled="cvAnalyzing || saving"
+                                    >
+                                        <span ng-show="cvAnalyzing">
+                                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                            Analyzing...
+                                        </span>
+                                        <span ng-show="!cvAnalyzing">
+                                            <i class="bi bi-robot me-2"></i>
+                                            Analyze Chips with AI
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Computer Vision Error -->
+                            <div class="alert alert-danger mt-3" ng-show="cvError">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                {{ cvError }}
+                            </div>
+                            
+                            <!-- Computer Vision Results -->
+                            <div class="mt-3" ng-show="showCvResults && cvResult">
+                                <div class="card border-info">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0">
+                                            <i class="bi bi-robot me-2"></i>
+                                            AI Analysis Results
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Confidence and Total -->
+                                        <div class="row mb-3">
+                                            <div class="col-6">
+                                                <strong>Confidence:</strong>
+                                                <span ng-class="getConfidenceColorClass(cvResult.confidence)">
+                                                    {{ cvResult.confidence_percentage }}
+                                                </span>
+                                                <small class="text-muted">({{ cvResult.confidence_level }})</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>Total Value:</strong>
+                                                <span class="text-success">${{ cvResult.total_value.toFixed(2) }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Detected Chips -->
+                                        <div class="mb-3">
+                                            <strong>Detected Chips:</strong>
+                                            <div class="small text-muted">{{ cvResult.chip_breakdown_display }}</div>
+                                        </div>
+                                        
+                                        <!-- Processing Time -->
+                                        <div class="mb-3">
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock me-1"></i>
+                                                Processed in {{ cvResult.processing_time }}
+                                            </small>
+                                        </div>
+                                        
+                                        <!-- Recommendations -->
+                                        <div class="mb-3" ng-show="getCvRecommendations().length > 0">
+                                            <strong class="small">Recommendations:</strong>
+                                            <ul class="small mb-0 mt-1">
+                                                <li ng-repeat="rec in getCvRecommendations()">{{ rec }}</li>
+                                            </ul>
+                                        </div>
+                                        
+                                        <!-- Action Buttons -->
+                                        <div class="d-flex gap-2">
+                                            <button 
+                                                type="button" 
+                                                class="btn btn-success btn-sm"
+                                                ng-click="applyDetectedValues()"
+                                                ng-disabled="saving"
+                                            >
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                Use These Values
+                                            </button>
+                                            
+                                            <button 
+                                                type="button" 
+                                                class="btn btn-outline-secondary btn-sm"
+                                                ng-click="clearCvResults()"
+                                            >
+                                                <i class="bi bi-x-circle me-1"></i>
+                                                Dismiss
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Photo Help -->
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="text-primary mb-2">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Photo Tips
+                                </h6>
+                                <ul class="small text-muted mb-0">
+                                    <li>Take a clear photo of your chip stack</li>
+                                    <li>Ensure good lighting and focus</li>
+                                    <li>Include all chips in the frame</li>
+                                    <li>Maximum file size: 10MB</li>
+                                    <li ng-show="cvAvailable"><strong>AI analysis available!</strong> Upload a photo to get automatic chip counting</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Button -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button 
+                            type="submit" 
+                            class="btn btn-lg"
+                            ng-class="sessionType === 'check-in' ? 'btn-check-in' : 'btn-check-out'"
+                            ng-disabled="!canSubmit()"
+                        >
+                            <span ng-show="saving">
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                Processing...
+                            </span>
+                            <span ng-show="!saving && sessionType === 'check-in'">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                Check In
+                            </span>
+                            <span ng-show="!saving && sessionType === 'check-out'">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Check Out
+                            </span>
+                        </button>
+                        
+                        <button 
+                            type="button" 
+                            class="btn btn-outline-secondary btn-lg"
+                            ng-click="resetForm()"
+                            ng-disabled="saving"
+                        >
+                            <i class="bi bi-arrow-clockwise me-2"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50" 
+     ng-show="saving" style="z-index: 9999;">
+    <div class="text-center text-white">
+        <div class="spinner-border mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div>{{ sessionType === 'check-in' ? 'Processing check-in...' : 'Processing check-out...' }}</div>
+    </div>
+</div>

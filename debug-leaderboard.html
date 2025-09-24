@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pokerPalApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Leaderboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .error { background: #ffe6e6; border-left-color: #dc3545; }
+        .success { background: #e6ffe6; border-left-color: #28a745; }
+    </style>
+</head>
+<body>
+    <h1>Leaderboard Debug</h1>
+    
+    <div ng-controller="DebugController">
+        <div class="debug">
+            <h3>Authentication Status:</h3>
+            <p>Is Authenticated: {{isAuthenticated}}</p>
+            <p>Current User: {{currentUser | json}}</p>
+            <p>Token: {{token ? 'Present' : 'Missing'}}</p>
+        </div>
+        
+        <div class="debug">
+            <h3>API Configuration:</h3>
+            <p>API Base URL: {{apiBaseUrl}}</p>
+        </div>
+        
+        <div class="debug">
+            <h3>Direct API Test:</h3>
+            <button ng-click="testDirectAPI()">Test API Directly</button>
+            <div ng-show="apiResult">
+                <h4>API Result:</h4>
+                <pre>{{apiResult | json}}</pre>
+            </div>
+            <div ng-show="apiError" class="error">
+                <h4>API Error:</h4>
+                <pre>{{apiError | json}}</pre>
+            </div>
+        </div>
+        
+        <div class="debug">
+            <h3>PlayerService Test:</h3>
+            <button ng-click="testPlayerService()">Test PlayerService.getLeaderboard()</button>
+            <div ng-show="playerServiceResult">
+                <h4>PlayerService Result:</h4>
+                <pre>{{playerServiceResult | json}}</pre>
+            </div>
+            <div ng-show="playerServiceError" class="error">
+                <h4>PlayerService Error:</h4>
+                <pre>{{playerServiceError | json}}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+    
+    <!-- Environment Configuration -->
+    <script src="js/config/environment.js"></script>
+    
+    <!-- AngularJS App Files -->
+    <script src="js/app-fixed.js"></script>
+    
+    <!-- Services -->
+    <script src="js/services/errorService.js"></script>
+    <script src="js/services/errorInterceptor.js"></script>
+    <script src="js/services/validationService.js"></script>
+    <script src="js/services/authService.js"></script>
+    <script src="js/services/playerService.js"></script>
+    
+    <script>
+        angular.module('pokerPalApp')
+        .controller('DebugController', ['$scope', '$http', 'AuthService', 'PlayerService', 'API_BASE_URL', 
+        function($scope, $http, AuthService, PlayerService, API_BASE_URL) {
+            
+            $scope.apiBaseUrl = API_BASE_URL;
+            $scope.isAuthenticated = AuthService.isAuthenticated();
+            $scope.currentUser = AuthService.getCurrentUser();
+            $scope.token = AuthService.getToken();
+            
+            $scope.testDirectAPI = function() {
+                $scope.apiResult = null;
+                $scope.apiError = null;
+                
+                console.log('Testing direct API call...');
+                
+                $http.get(API_BASE_URL + '/leaderboard')
+                .then(function(response) {
+                    console.log('Direct API success:', response);
+                    $scope.apiResult = response.data;
+                })
+                .catch(function(error) {
+                    console.error('Direct API error:', error);
+                    $scope.apiError = error;
+                });
+            };
+            
+            $scope.testPlayerService = function() {
+                $scope.playerServiceResult = null;
+                $scope.playerServiceError = null;
+                
+                console.log('Testing PlayerService...');
+                
+                PlayerService.getLeaderboard()
+                .then(function(data) {
+                    console.log('PlayerService success:', data);
+                    $scope.playerServiceResult = data;
+                })
+                .catch(function(error) {
+                    console.error('PlayerService error:', error);
+                    $scope.playerServiceError = error;
+                });
+            };
+            
+            console.log('Debug controller loaded');
+            console.log('Auth status:', $scope.isAuthenticated);
+            console.log('Current user:', $scope.currentUser);
+            console.log('Token present:', !!$scope.token);
+        }]);
+    </script>
+</body>
+</html>

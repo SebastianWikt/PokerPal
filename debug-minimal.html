@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pokerPalApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokerPal Minimal Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .error { color: red; background: #ffe6e6; padding: 10px; margin: 10px 0; }
+        .success { color: green; background: #e6ffe6; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>PokerPal Minimal Debug</h1>
+    
+    <div ng-controller="MinimalController">
+        <p>If this works: {{message}}</p>
+        <p>API URL: {{apiUrl}}</p>
+        <button ng-click="testClick()">Test Click</button>
+        <p ng-show="clicked">Button was clicked!</p>
+    </div>
+    
+    <div id="bootstrap-status"></div>
+
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+    
+    <!-- Environment Configuration -->
+    <script src="js/config/environment.js"></script>
+    
+    <script>
+        // Capture all errors
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            document.getElementById('bootstrap-status').innerHTML += 
+                '<div class="error">Global Error: ' + e.error.message + '</div>';
+        });
+        
+        // Create minimal app
+        try {
+            angular.module("pokerPalApp", ["ngRoute"])
+            .constant("API_BASE_URL", window.ENV_CONFIG ? window.ENV_CONFIG.apiBaseUrl : "http://localhost:3000/api")
+            .constant("ENV_CONFIG", window.ENV_CONFIG || {})
+            .controller('MinimalController', ['$scope', 'API_BASE_URL', function($scope, API_BASE_URL) {
+                console.log('MinimalController starting...');
+                $scope.message = 'AngularJS app is working!';
+                $scope.apiUrl = API_BASE_URL;
+                $scope.clicked = false;
+                
+                $scope.testClick = function() {
+                    $scope.clicked = true;
+                    console.log('Button clicked!');
+                };
+                
+                console.log('MinimalController loaded successfully');
+            }]);
+            
+            console.log('App module created successfully');
+            
+        } catch (e) {
+            console.error('Error creating app:', e);
+            document.getElementById('bootstrap-status').innerHTML = 
+                '<div class="error">App Creation Error: ' + e.message + '</div>';
+        }
+        
+        // Check bootstrap status
+        angular.element(document).ready(function() {
+            setTimeout(function() {
+                const scope = angular.element(document.querySelector('[ng-controller="MinimalController"]')).scope();
+                if (scope && scope.message) {
+                    document.getElementById('bootstrap-status').innerHTML = 
+                        '<div class="success">✓ AngularJS bootstrap successful</div>';
+                } else {
+                    document.getElementById('bootstrap-status').innerHTML = 
+                        '<div class="error">✗ AngularJS bootstrap failed</div>';
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

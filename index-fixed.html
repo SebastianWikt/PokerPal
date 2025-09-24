@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pokerPalApp">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PokerPal - Track Your Poker Sessions</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/app.css" />
+
+    <!-- AngularJS -->
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <!-- Navigation Bar -->
+      <nav
+        class="navbar navbar-expand-sm navbar-dark bg-primary mb-4"
+        ng-controller="NavController"
+      >
+        <div class="container">
+          <a class="navbar-brand" href="#!/home" ng-if="isAuthenticated">
+            <i class="bi bi-suit-spade-fill me-2"></i>
+            <strong>PokerPal</strong>
+          </a>
+          <a class="navbar-brand" href="#!/" ng-if="!isAuthenticated">
+            <i class="bi bi-suit-spade-fill me-2"></i>
+            <strong>PokerPal</strong>
+          </a>
+
+          <!-- Simple message for non-authenticated state -->
+          <div class="navbar-nav" ng-if="!isAuthenticated">
+            <span class="navbar-text">
+              <i class="bi bi-person-circle me-1"></i>
+              Please log in
+            </span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <div ng-view></div>
+      </main>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Environment Configuration -->
+    <script src="js/config/environment.js"></script>
+    
+    <!-- Simple AngularJS App -->
+    <script>
+      // Create a simplified version of the app
+      angular
+        .module("pokerPalApp", ["ngRoute"])
+        .constant("API_BASE_URL", window.ENV_CONFIG ? window.ENV_CONFIG.apiBaseUrl : "http://localhost:3000/api")
+        .constant("ENV_CONFIG", window.ENV_CONFIG || {})
+        
+        .config(['$routeProvider', function ($routeProvider) {
+          $routeProvider
+            .when("/", {
+              templateUrl: "views/login.html",
+              controller: "LoginController"
+            })
+            .when("/home", {
+              templateUrl: "views/home.html", 
+              controller: "HomeController"
+            })
+            .otherwise({
+              redirectTo: "/"
+            });
+        }])
+        
+        .run(['$rootScope', function ($rootScope) {
+          console.log('PokerPal app started');
+        }])
+        
+        .controller('NavController', ['$scope', function($scope) {
+          $scope.isAuthenticated = false;
+          $scope.currentUser = null;
+        }])
+        
+        .controller('LoginController', ['$scope', function($scope) {
+          $scope.loginData = {};
+          $scope.login = function() {
+            console.log('Login clicked');
+          };
+        }])
+        
+        .controller('HomeController', ['$scope', function($scope) {
+          $scope.currentUser = { first_name: 'Test', last_name: 'User' };
+          $scope.formatCurrency = function(amount) {
+            return '$' + (amount || 0).toFixed(2);
+          };
+        }]);
+    </script>
+  </body>
+</html>

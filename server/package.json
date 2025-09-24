@@ -1,0 +1,42 @@
+{
+  "name": "poker-tracker-server",
+  "version": "1.0.0",
+  "description": "Backend server for PokerPal tracking application",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "init-db": "node database/init.js",
+    "reset-db": "node -e \"require('./database/init').reset().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)})\"",
+    "seed-db": "node -e \"require('./database/init').seed().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)})\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test-auth": "node -e \"require('./test/test-auth').testAuth().then(() => process.exit(0)).catch(e => {console.error(e); process.exit(1)})\""
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.0.0",
+    "joi": "^17.9.2",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "jest": "^29.6.2",
+    "nodemon": "^3.0.1",
+    "supertest": "^6.3.3"
+  },
+  "keywords": [
+    "poker",
+    "tracking",
+    "angularjs",
+    "sqlite"
+  ],
+  "author": "PokerPal Team",
+  "license": "MIT"
+}
