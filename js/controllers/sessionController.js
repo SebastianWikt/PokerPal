@@ -18,39 +18,29 @@ angular.module('pokerPalApp')
     
         
         // DOM listeners will be attached after the view has rendered
-    // Helper: parse YYYY-MM-DD into Date object
-    function parseYMDToDate(ymd) {
-        if (!ymd) return null;
-        if (ymd instanceof Date) return ymd;
-        var parts = ('' + ymd).split('-');
-        if (parts.length !== 3) return new Date(ymd);
-        var y = parseInt(parts[0], 10);
-        var m = parseInt(parts[1], 10) - 1;
-        var d = parseInt(parts[2], 10);
-        return new Date(y, m, d);
-    }
-
-    // Helper: format Date or string to YYYY-MM-DD
-    function formatDateToYMD(date) {
-        if (!date) return '';
-        if (typeof date === 'string') {
-            // assume already YYYY-MM-DD
-            return date;
-        }
-        var y = date.getFullYear();
-        var m = String(date.getMonth() + 1).padStart(2, '0');
-        var d = String(date.getDate()).padStart(2, '0');
-        return y + '-' + m + '-' + d;
+    // Simple date helper - get today's date as YYYY-MM-DD
+    function getTodayDateString() {
+        var today = new Date();
+        var year = today.getFullYear();
+        var month = today.getMonth() + 1;
+        var day = today.getDate();
+        
+        var monthStr = month < 10 ? '0' + month : '' + month;
+        var dayStr = day < 10 ? '0' + day : '' + day;
+        
+        return year + '-' + monthStr + '-' + dayStr;
     }
     // (no automatic sessionType flips here)
-    // Form data (use YYYY-MM-DD string for compatibility with <input type="date">)
+    // Form data with simple date default
     $scope.sessionData = {
-        session_date: SessionService.getTodayDate(),
+        session_date: new Date(),
         start_chips: null,
         start_chip_breakdown: {},
         end_chips: null,
         end_chip_breakdown: {}
     };
+    
+
 
     // Drag state for photo upload
     $scope.isDragOver = false;
@@ -141,7 +131,7 @@ angular.module('pokerPalApp')
     function checkActiveSession() {
         $scope.loading = true;
 
-        var dateToCheck = $scope.sessionData.session_date || SessionService.getTodayDate();
+        var dateToCheck = $scope.sessionData.session_date;
         SessionService.getActiveSession($scope.currentUser.computing_id, dateToCheck)
             .then(function(session) {
                 if (session) {
@@ -189,6 +179,10 @@ angular.module('pokerPalApp')
         if ($scope.sessionType !== type) {
             $scope.sessionType = type;
             $scope.clearMessages();
+            // Clear any currently selected photo/preview so files are not accidentally reused
+            if ($scope.clearPhoto) {
+                $scope.clearPhoto();
+            }
             // prevent background checks from overriding this manual change for a short window
             // give the user a longer window (5s) to avoid immediate UI flicker
             manualOverrideUntil = Date.now() + 5000;
@@ -340,9 +334,25 @@ angular.module('pokerPalApp')
         $scope.error = null;
         $scope.success = null;
         
-        // Prepare session data
+        // Prepare session data - ensure date is in YYYY-MM-DD format
+        var dateValue = $scope.sessionData.session_date;
+        var formattedDate;
+        
+        if (dateValue instanceof Date) {
+            // Convert Date object to YYYY-MM-DD string
+            var year = dateValue.getFullYear();
+            var month = dateValue.getMonth() + 1;
+            var day = dateValue.getDate();
+            var monthStr = month < 10 ? '0' + month : '' + month;
+            var dayStr = day < 10 ? '0' + day : '' + day;
+            formattedDate = year + '-' + monthStr + '-' + dayStr;
+        } else {
+            // Already a string, use as-is
+            formattedDate = dateValue;
+        }
+        
         var sessionData = {
-            session_date: formatDateToYMD($scope.sessionData.session_date),
+            session_date: formattedDate,
             session_type: $scope.sessionType
         };
         
@@ -380,11 +390,17 @@ angular.module('pokerPalApp')
                     $scope.sessionData.start_chips = response.session.start_chips;
                     $scope.sessionData.start_chip_breakdown = response.session.start_chip_breakdown || {};
                     
+                    // Ensure date stays as Date object for HTML5 date input
+                    $scope.sessionData.session_date = new Date();
+                    
                 } else {
                     $scope.success = 'Check-out successful! Net winnings: ' + SessionService.formatCurrency(response.session.net_winnings);
                     
                     // Reset form
                     $scope.resetForm();
+                    
+                    // Ensure date is Date object after reset
+                    $scope.sessionData.session_date = new Date();
                     
                     // Refresh user data to update total winnings
                     AuthService.refreshUser();
@@ -409,7 +425,7 @@ angular.module('pokerPalApp')
     // Reset form
     $scope.resetForm = function() {
         $scope.sessionData = {
-            session_date: parseYMDToDate(SessionService.getTodayDate()),
+            session_date: new Date(),
             start_chips: null,
             start_chip_breakdown: {},
             end_chips: null,
@@ -430,15 +446,7 @@ angular.module('pokerPalApp')
         $scope.photoError = null;
     };
     
-    // Date change handler
-    $scope.onDateChange = function() {
-        $scope.clearMessages();
-        
-        // Check for active session on new date
-        if ($scope.sessionData.session_date) {
-            checkActiveSession();
-        }
-    };
+
     
     // Get chip breakdown display
     $scope.getChipBreakdownDisplay = function(breakdown) {
@@ -471,10 +479,7 @@ angular.module('pokerPalApp')
         return $scope.sessionType === 'check-in' ? 'Check In' : 'Check Out';
     };
     
-    // Get today's date for max date validation
-    $scope.getTodayDate = function() {
-        return SessionService.getTodayDate();
-    };
+
     
     // Check if form is valid for submission
     $scope.canSubmit = function() {

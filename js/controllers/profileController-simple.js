@@ -147,9 +147,13 @@ angular.module('pokerPalApp')
                 }, 2000);
             } else {
                 // Update AuthService with new user data if available
-                if (response.user) {
-                    AuthService.updateCurrentUser(response.user);
+                if (response.player) {
+                    AuthService.updateCurrentUser(response.player);
                     // update snapshot so hasChanges returns false
+                    $scope.originalData = angular.copy($scope.playerData);
+                } else if (response.user) {
+                    // fallback for endpoints returning `user`
+                    AuthService.updateCurrentUser(response.user);
                     $scope.originalData = angular.copy($scope.playerData);
                 }
             }

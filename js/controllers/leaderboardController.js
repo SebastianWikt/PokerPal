@@ -79,6 +79,8 @@ angular.module('pokerPalApp')
     function loadSummaryStats() {
         LeaderboardService.getLeaderboardStats().then(function(data) {
             $scope.summaryStats = data.summary;
+            // Cache the display format to avoid infinite digest loop
+            $scope.summaryStatsDisplay = LeaderboardService.getSummaryStatsDisplay(data.summary);
             console.log('Summary stats loaded:', data);
             
         }).catch(function(error) {

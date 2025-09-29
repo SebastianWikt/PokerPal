@@ -212,23 +212,23 @@
                     </div>
                 </form>
                 
-                <!-- Current Stats -->
-                <div class="mt-4 p-3 bg-light rounded">
+                <!-- Current Stats (Edit Mode Only) -->
+                <div ng-show="isEditMode" class="mt-4 p-3 bg-light rounded">
                     <h6 class="text-primary mb-3">
                         <i class="bi bi-graph-up me-2"></i>
                         Your Statistics
                     </h6>
                     <div class="row text-center">
                         <div class="col-4">
-                            <div class="h5 mb-1 text-success">$0.00</div>
+                            <div class="h5 mb-1" ng-class="getWinningsColorClass()">{{ formatCurrency(stats.total_winnings) }}</div>
                             <small class="text-muted">Total Winnings</small>
                         </div>
                         <div class="col-4">
-                            <div class="h5 mb-1 text-primary">0</div>
+                            <div class="h5 mb-1 text-primary">{{ stats.sessions }}</div>
                             <small class="text-muted">Sessions</small>
                         </div>
                         <div class="col-4">
-                            <div class="h5 mb-1 text-info">-</div>
+                            <div class="h5 mb-1 text-info">#{{ stats.rank }}</div>
                             <small class="text-muted">Rank</small>
                         </div>
                     </div>

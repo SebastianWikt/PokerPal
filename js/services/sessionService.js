@@ -11,7 +11,20 @@ angular.module('pokerPalApp')
         // Add session data
         Object.keys(sessionData).forEach(function(key) {
             if (sessionData[key] !== null && sessionData[key] !== undefined) {
-                if (typeof sessionData[key] === 'object') {
+                if (key === 'session_date') {
+                    // Handle date specially - ensure it's in YYYY-MM-DD format
+                    var dateValue = sessionData[key];
+                    if (dateValue instanceof Date) {
+                        var year = dateValue.getFullYear();
+                        var month = dateValue.getMonth() + 1;
+                        var day = dateValue.getDate();
+                        var monthStr = month < 10 ? '0' + month : '' + month;
+                        var dayStr = day < 10 ? '0' + day : '' + day;
+                        formData.append(key, year + '-' + monthStr + '-' + dayStr);
+                    } else {
+                        formData.append(key, dateValue);
+                    }
+                } else if (typeof sessionData[key] === 'object') {
                     formData.append(key, JSON.stringify(sessionData[key]));
                 } else {
                     formData.append(key, sessionData[key]);
@@ -55,7 +68,19 @@ angular.module('pokerPalApp')
     this.getActiveSession = function(computingId, date) {
         var deferred = $q.defer();
         date = date || this.getTodayDate();
-        $http.get(API_BASE_URL + '/sessions/active/' + computingId + '/' + date).then(function(response) {
+        
+        // Convert Date object to YYYY-MM-DD string if needed
+        var dateString = date;
+        if (date instanceof Date) {
+            var year = date.getFullYear();
+            var month = date.getMonth() + 1;
+            var day = date.getDate();
+            var monthStr = month < 10 ? '0' + month : '' + month;
+            var dayStr = day < 10 ? '0' + day : '' + day;
+            dateString = year + '-' + monthStr + '-' + dayStr;
+        }
+        
+        $http.get(API_BASE_URL + '/sessions/active/' + computingId + '/' + dateString).then(function(response) {
             deferred.resolve(response.data.session);
         }).catch(function(error) {
             // Treat 404 as "no active session" (not an exceptional error)
@@ -125,9 +150,14 @@ angular.module('pokerPalApp')
     this.getTodayDate = function() {
         var today = new Date();
         var year = today.getFullYear();
-        var month = String(today.getMonth() + 1).padStart(2, '0');
-        var day = String(today.getDate()).padStart(2, '0');
-        return year + '-' + month + '-' + day;
+        var month = today.getMonth() + 1;
+        var day = today.getDate();
+        
+        // Format with leading zeros (compatible with older browsers)
+        var monthStr = month < 10 ? '0' + month : '' + month;
+        var dayStr = day < 10 ? '0' + day : '' + day;
+        
+        return year + '-' + monthStr + '-' + dayStr;
     };
     
     // Format date for display

@@ -1,5 +1,5 @@
 angular.module('pokerPalApp')
-.controller('ProfileController', ['$scope', '$location', '$routeParams', 'AuthService', 'PlayerService', function($scope, $location, $routeParams, AuthService, PlayerService) {
+.controller('ProfileController', ['$scope', '$location', '$routeParams', '$timeout', 'AuthService', 'PlayerService', function($scope, $location, $routeParams, $timeout, AuthService, PlayerService) {
     
     // Initialize controller
     $scope.isCreateMode = $location.path().includes('/create');
@@ -8,6 +8,13 @@ angular.module('pokerPalApp')
     $scope.saving = false;
     $scope.error = null;
     $scope.success = null;
+    
+    // Player statistics
+    $scope.stats = {
+        total_winnings: 0,
+        sessions: 0,
+        rank: '-'
+    };
     
     // Form data
     $scope.playerData = {
@@ -48,10 +55,68 @@ angular.module('pokerPalApp')
             };
             // Keep an original copy to detect changes reliably
             $scope.originalData = angular.copy($scope.playerData);
+            
+            // Load stats from current user data
+            $scope.stats.total_winnings = currentUser.total_winnings || 0;
+            
+            // Load additional stats
+            loadPlayerStats();
         } else {
             $location.path('/');
         }
     }
+    
+    // Load player statistics
+    function loadPlayerStats() {
+        if (!$scope.isEditMode) return;
+        
+        var currentUser = AuthService.getCurrentUser();
+        if (!currentUser) return;
+        
+        // Get player entries to count sessions
+        PlayerService.getPlayerEntries(currentUser.computing_id).then(function(response) {
+            $timeout(function() {
+                $scope.stats.sessions = response.entries ? response.entries.length : 0;
+                $scope.stats.total_winnings = response.player ? response.player.total_winnings : 0;
+            });
+        }).catch(function(error) {
+            console.log('Could not load player stats:', error);
+        });
+        
+        // Get leaderboard to find rank
+        PlayerService.getLeaderboard().then(function(response) {
+            $timeout(function() {
+                var leaderboard = response.leaderboard || [];
+                for (var i = 0; i < leaderboard.length; i++) {
+                    if (leaderboard[i].computing_id === currentUser.computing_id) {
+                        $scope.stats.rank = i + 1;
+                        break;
+                    }
+                }
+            });
+        }).catch(function(error) {
+            console.log('Could not load leaderboard:', error);
+        });
+    }
+    
+    // Format currency (same as home controller)
+    $scope.formatCurrency = function(amount) {
+        if (typeof amount !== 'number') {
+            amount = parseFloat(amount) || 0;
+        }
+        return '$' + amount.toFixed(2);
+    };
+    
+    // Get winnings color class (same as home controller)
+    $scope.getWinningsColorClass = function() {
+        var winnings = parseFloat($scope.stats.total_winnings) || 0;
+        if (winnings > 0) {
+            return 'text-success';
+        } else if (winnings < 0) {
+            return 'text-danger';
+        }
+        return 'text-muted';
+    };
     
     // Save profile (create or update)
     $scope.saveProfile = function() {
@@ -113,8 +178,9 @@ angular.module('pokerPalApp')
                 $scope.success = 'Profile updated successfully!';
                 
                 // Refresh user data in AuthService
-                AuthService.refreshUser().then(function() {
-                    // Update local data with fresh data
+                // If server returned the updated player in the response, use it to update AuthService
+                if (response.player) {
+                    AuthService.updateCurrentUser(response.player);
                     var updatedUser = AuthService.getCurrentUser();
                     $scope.playerData = {
                         computing_id: updatedUser.computing_id,
@@ -126,7 +192,21 @@ angular.module('pokerPalApp')
                     };
                     // Update original snapshot so hasChanges is reset
                     $scope.originalData = angular.copy($scope.playerData);
-                });
+                } else {
+                    // Fallback: refresh from server
+                    AuthService.refreshUser().then(function() {
+                        var updatedUser = AuthService.getCurrentUser();
+                        $scope.playerData = {
+                            computing_id: updatedUser.computing_id,
+                            first_name: updatedUser.first_name,
+                            last_name: updatedUser.last_name,
+                            years_of_experience: updatedUser.years_of_experience,
+                            level: updatedUser.level,
+                            major: updatedUser.major
+                        };
+                        $scope.originalData = angular.copy($scope.playerData);
+                    });
+                }
             }
             
         }).catch(function(error) {

@@ -103,6 +103,17 @@ angular.module('pokerPalApp')
     this.getCurrentUser = function() {
         return currentUser;
     };
+
+    // Update current user object (useful after profile edits)
+    this.updateCurrentUser = function(user) {
+        if (!user) return;
+        currentUser = user;
+        try {
+            localStorage.setItem('pokerpal_user', JSON.stringify(currentUser));
+        } catch (e) {
+            console.error('Failed to persist updated user to localStorage', e);
+        }
+    };
     
     // Get auth token
     this.getToken = function() {
