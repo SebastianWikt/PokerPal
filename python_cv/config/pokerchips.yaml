@@ -1,0 +1,10 @@
+path: ../data/pokerchips
+train: images/train
+val: images/val
+task: segment
+names:
+  0: white_1
+  1: red_2
+  2: green_5
+  3: black_20
+  4: blue_50

@@ -1,0 +1,7 @@
+ultralytics==8.3.40
+pillow>=10.0.0
+opencv-python>=4.9.0.80
+numpy>=1.26
+# install PyTorch matching your CUDA; if CPU only, pip will grab CPU wheels
+torch>=2.3.0
+torchvision>=0.18.0
