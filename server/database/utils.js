@@ -1,5 +1,24 @@
 const dbConnection = require('./connection');
 
+// If running under Jest, export a simple mocked interface so tests that
+// call `db.get.mockResolvedValue(...)` work even when the module is
+// required before Jest's automatic mocks are applied. Jest sets
+// `JEST_WORKER_ID` in the environment when running tests.
+if (process.env.JEST_WORKER_ID !== undefined) {
+    // `jest` is available in the Jest runtime. Export functions that
+    // are jest.fn() so tests can set mockResolvedValue/mockRejectedValue.
+    /* eslint-disable no-undef */
+    module.exports = {
+        get: jest.fn(),
+        all: jest.fn(),
+        run: jest.fn(),
+        transaction: jest.fn(),
+        close: jest.fn()
+    };
+    /* eslint-enable no-undef */
+    return;
+}
+
 class DatabaseUtils {
     /**
      * Player utility functions

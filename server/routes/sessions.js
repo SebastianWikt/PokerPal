@@ -9,6 +9,16 @@ const DatabaseUtils = require('../database/utils');
 
 const router = express.Router();
 
+// Helper function to format date as YYYY-MM-DD
+const formatSessionDate = (dateValue) => {
+    if (!dateValue) return null;
+    if (typeof dateValue === 'string' && dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateValue; // Already in correct format
+    }
+    const date = new Date(dateValue);
+    return date.toISOString().split('T')[0];
+};
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -81,6 +91,11 @@ const createSessionSchema = Joi.object({
     session_date: schemas.sessionDate.required(),
     start_chips: Joi.number().positive().precision(2).optional(),
     start_chip_breakdown: Joi.object().pattern(
+        schemas.chipColor,
+        schemas.chipCount
+    ).optional(),
+    end_chips: Joi.number().positive().precision(2).optional(),
+    end_chip_breakdown: Joi.object().pattern(
         schemas.chipColor,
         schemas.chipCount
     ).optional(),
@@ -158,7 +173,7 @@ router.post('/',
                     session: {
                         entry_id: newEntry.entry_id,
                         computing_id: newEntry.computing_id,
-                        session_date: newEntry.session_date,
+                        session_date: formatSessionDate(newEntry.session_date),
                         start_photo_url: newEntry.start_photo_url,
                         start_chips: parseFloat(newEntry.start_chips) || 0,
                         start_chip_breakdown: newEntry.start_chip_breakdown,
@@ -224,7 +239,7 @@ router.post('/',
                     session: {
                         entry_id: completedSession.entry_id,
                         computing_id: completedSession.computing_id,
-                        session_date: completedSession.session_date,
+                        session_date: formatSessionDate(completedSession.session_date),
                         start_photo_url: completedSession.start_photo_url,
                         start_chips: parseFloat(completedSession.start_chips) || 0,
                         start_chip_breakdown: completedSession.start_chip_breakdown,
@@ -371,7 +386,7 @@ router.get('/active/:computingId/:date',
                 session: {
                     entry_id: activeSession.entry_id,
                     computing_id: activeSession.computing_id,
-                    session_date: activeSession.session_date,
+                    session_date: formatSessionDate(activeSession.session_date),
                     start_photo_url: activeSession.start_photo_url,
                     start_chips: parseFloat(activeSession.start_chips) || 0,
                     start_chip_breakdown: activeSession.start_chip_breakdown,

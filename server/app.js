@@ -134,6 +134,11 @@ process.on("SIGTERM", async () => {
   process.exit(0);
 });
 
-startServer();
+// Only start the server when this file is executed directly. This prevents
+// the server (and database initialization) from running during unit tests
+// which `require` this module.
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
