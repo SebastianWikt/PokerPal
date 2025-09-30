@@ -177,22 +177,17 @@ angular
   .config([
     "$httpProvider",
     function ($httpProvider) {
-      // Add JWT token to all HTTP requests
+      // Add response error interceptor
       $httpProvider.interceptors.push([
-        "AuthService",
         "$location",
         "$q",
-        function (AuthService, $location, $q) {
+        "$injector",
+        function ($location, $q, $injector) {
           return {
-            request: function (config) {
-              var token = AuthService.getToken();
-              if (token) {
-                config.headers.Authorization = "Bearer " + token;
-              }
-              return config;
-            },
             responseError: function (response) {
               if (response.status === 401) {
+                // Use $injector to avoid circular dependency
+                var AuthService = $injector.get('AuthService');
                 AuthService.logout().then(function () {
                   $location.path("/");
                 });

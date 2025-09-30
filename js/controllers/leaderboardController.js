@@ -79,7 +79,7 @@ angular.module('pokerPalApp')
     function loadSummaryStats() {
         LeaderboardService.getLeaderboardStats().then(function(data) {
             $scope.summaryStats = data.summary;
-            // Cache the display format to avoid infinite digest loop
+            // Cache the formatted stats to prevent infinite digest loop
             $scope.summaryStatsDisplay = LeaderboardService.getSummaryStatsDisplay(data.summary);
             console.log('Summary stats loaded:', data);
             
@@ -194,22 +194,30 @@ angular.module('pokerPalApp')
         console.log('View profile for:', player.display_name);
     };
     
-    // Get display methods from service
-    $scope.formatCurrency = LeaderboardService.formatCurrency;
-    $scope.getWinningsColorClass = LeaderboardService.getWinningsColorClass;
-    $scope.getRankBadgeClass = LeaderboardService.getRankBadgeClass;
-    $scope.getRankChangeIcon = LeaderboardService.getRankChangeIcon;
-    $scope.getRankChangeText = LeaderboardService.getRankChangeText;
-    $scope.formatPercentage = LeaderboardService.formatPercentage;
-    $scope.getWinRateColorClass = LeaderboardService.getWinRateColorClass;
-    $scope.formatTimeframeDisplay = LeaderboardService.formatTimeframeDisplay;
-    $scope.formatSortDisplay = LeaderboardService.formatSortDisplay;
-    $scope.getPlayerInitials = LeaderboardService.getPlayerInitials;
-    $scope.formatSessionCount = LeaderboardService.formatSessionCount;
-    $scope.getTrendingIndicator = LeaderboardService.getTrendingIndicator;
-    $scope.getPercentileColorClass = LeaderboardService.getPercentileColorClass;
-    $scope.formatLastSessionDate = LeaderboardService.formatLastSessionDate;
-    $scope.getSummaryStatsDisplay = LeaderboardService.getSummaryStatsDisplay;
+    // Utility functions - wrapped to prevent infinite digest loop
+    $scope.formatCurrency = function(amount) {
+        return LeaderboardService.formatCurrency(amount);
+    };
+    
+    $scope.getWinningsColorClass = function(amount) {
+        return LeaderboardService.getWinningsColorClass(amount);
+    };
+    
+    $scope.getRankBadgeClass = function(rank) {
+        return LeaderboardService.getRankBadgeClass(rank);
+    };
+    
+    $scope.formatPercentage = function(value) {
+        return LeaderboardService.formatPercentage(value);
+    };
+    
+    $scope.formatTimeframeDisplay = function(timeframe) {
+        return LeaderboardService.formatTimeframeDisplay(timeframe);
+    };
+    
+    $scope.formatSortDisplay = function(sort) {
+        return LeaderboardService.formatSortDisplay(sort);
+    };
     
     // Get filter display text
     $scope.getFilterSummary = function() {

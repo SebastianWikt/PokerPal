@@ -85,7 +85,7 @@ class DatabaseUtils {
 
     static async getLeaderboard() {
         return await dbConnection.all(`
-            SELECT first_name, last_name, total_winnings
+            SELECT computing_id, first_name, last_name, total_winnings
             FROM players
             ORDER BY total_winnings DESC
         `);
