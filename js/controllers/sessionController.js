@@ -48,44 +48,61 @@ angular.module('pokerPalApp')
     $scope.photoFile = null;
     $scope.photoPreview = null;
     $scope.photoError = null;
+        // Track if listeners are already attached to prevent duplicates
+        var listenersAttached = false;
+        
+        // Event handler functions - declared once to allow removal
+        var photoAreaClickHandler = function(e) {
+            if (__debug) console.debug('[session] photoArea click');
+            $scope.triggerFileInput();
+        };
+        
+        var photoAreaDragOverHandler = function(e) {
+            e.preventDefault();
+            if (__debug) console.debug('[session] photoArea dragover');
+            $scope.onDragOver(e);
+        };
+        
+        var photoAreaDragLeaveHandler = function(e) {
+            e.preventDefault();
+            $scope.onDragLeave(e);
+        };
+        
+        var photoAreaDropHandler = function(e) {
+            e.preventDefault();
+            if (__debug) console.debug('[session] photoArea drop');
+            $scope.onDrop(e);
+        };
+        
+        var fileInputChangeHandler = function(e) {
+            if (__debug) console.debug('[session] fileInput change, files=', e.target.files && e.target.files.length);
+            $scope.handleFileSelect(e);
+        };
+        
         // Attach DOM listeners for photo area and hidden file input so events call controller methods reliably
         function attachDomListeners() {
             try {
+                // Skip if already attached to prevent duplicate listeners
+                if (listenersAttached) {
+                    if (__debug) console.debug('[session] attachDomListeners: skipping, already attached');
+                    return;
+                }
+                
                 var photoArea = document.querySelector('.photo-upload-area');
                 var fileInput = document.getElementById('photoInput');
 
                 if (__debug) console.debug('[session] attachDomListeners: found photoArea=', !!photoArea, 'fileInput=', !!fileInput);
-                if (photoArea) {
-                    photoArea.addEventListener('click', function(e) {
-                        // Use scope method
-                        if (__debug) console.debug('[session] photoArea click');
-                        $scope.triggerFileInput();
-                        // no $apply needed here since click originates from DOM
-                    });
-
-                    photoArea.addEventListener('dragover', function(e) {
-                        e.preventDefault();
-                        if (__debug) console.debug('[session] photoArea dragover');
-                        $scope.onDragOver(e);
-                    });
-
-                    photoArea.addEventListener('dragleave', function(e) {
-                        e.preventDefault();
-                        $scope.onDragLeave(e);
-                    });
-
-                    photoArea.addEventListener('drop', function(e) {
-                        e.preventDefault();
-                        if (__debug) console.debug('[session] photoArea drop');
-                        $scope.onDrop(e);
-                    });
-                }
-
-                if (fileInput) {
-                    fileInput.addEventListener('change', function(e) {
-                        if (__debug) console.debug('[session] fileInput change, files=', e.target.files && e.target.files.length);
-                        $scope.handleFileSelect(e);
-                    });
+                
+                if (photoArea && fileInput) {
+                    // Only attach if both elements are found
+                    photoArea.addEventListener('click', photoAreaClickHandler);
+                    photoArea.addEventListener('dragover', photoAreaDragOverHandler);
+                    photoArea.addEventListener('dragleave', photoAreaDragLeaveHandler);
+                    photoArea.addEventListener('drop', photoAreaDropHandler);
+                    fileInput.addEventListener('change', fileInputChangeHandler);
+                    
+                    listenersAttached = true;
+                    if (__debug) console.debug('[session] attachDomListeners: listeners attached successfully');
                 }
             } catch (err) {
                 // ignore DOM attach errors
