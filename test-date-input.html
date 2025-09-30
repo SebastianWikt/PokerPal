@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html ng-app="testApp">
+<head>
+    <title>Date Input Test</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <script src="js/services/sessionService.js"></script>
+</head>
+<body ng-controller="TestController">
+    <h1>Date Input Test</h1>
+    
+    <div>
+        <label>Session Date:</label>
+        <input type="date" ng-model="sessionData.session_date" ng-change="onDateChange()">
+        <p>Selected Date: {{ sessionData.session_date }}</p>
+        <p>Today's Date: {{ getTodayDate() }}</p>
+    </div>
+
+    <script>
+        angular.module('testApp', [])
+        .constant('API_BASE_URL', 'http://localhost:3000/api')
+        .service('SessionService', ['$http', '$q', 'API_BASE_URL', function($http, $q, API_BASE_URL) {
+            // Get today's date in YYYY-MM-DD format
+            this.getTodayDate = function() {
+                var today = new Date();
+                var year = today.getFullYear();
+                var month = today.getMonth() + 1;
+                var day = today.getDate();
+                
+                // Format with leading zeros (compatible with older browsers)
+                var monthStr = month < 10 ? '0' + month : '' + month;
+                var dayStr = day < 10 ? '0' + day : '' + day;
+                
+                return year + '-' + monthStr + '-' + dayStr;
+            };
+        }])
+        .controller('TestController', ['$scope', 'SessionService', function($scope, SessionService) {
+            $scope.sessionData = {
+                session_date: SessionService.getTodayDate()
+            };
+            
+            $scope.getTodayDate = function() {
+                return SessionService.getTodayDate();
+            };
+            
+            $scope.onDateChange = function() {
+                console.log('Date changed to:', $scope.sessionData.session_date);
+            };
+        }]);
+    </script>
+</body>
+</html>

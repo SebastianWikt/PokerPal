@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Date Test</title>
+</head>
+<body>
+    <h1>HTML5 Date Input Test</h1>
+    
+    <div>
+        <label>Date Input:</label>
+        <input type="date" id="dateInput" onchange="showDate()">
+        <p id="output">No date selected</p>
+    </div>
+
+    <script>
+        function getTodayDate() {
+            var today = new Date();
+            var year = today.getFullYear();
+            var month = today.getMonth() + 1;
+            var day = today.getDate();
+            
+            var monthStr = month < 10 ? '0' + month : '' + month;
+            var dayStr = day < 10 ? '0' + day : '' + day;
+            
+            return year + '-' + monthStr + '-' + dayStr;
+        }
+        
+        function showDate() {
+            var input = document.getElementById('dateInput');
+            var output = document.getElementById('output');
+            output.textContent = 'Selected: ' + input.value;
+        }
+        
+        // Set today's date as default
+        document.addEventListener('DOMContentLoaded', function() {
+            var input = document.getElementById('dateInput');
+            input.value = getTodayDate();
+            showDate();
+        });
+    </script>
+</body>
+</html>
